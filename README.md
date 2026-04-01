@@ -1,11 +1,11 @@
 # SmartDoc AI
-Intelligent Document Q&A SystemSmartDoc AI is an intelligent document questioning and answering system built using Retrieval-Augmented Generation (RAG). This system allows users to upload PDF files and interact directly with the content through a local Large Language Model (LLM), ensuring absolute data privacy and security.
+Intelligent Document Q&A SystemSmartDoc AI is an intelligent document questioning and answering system built using Retrieval-Augmented Generation (RAG). This system allows users to upload PDF files and interact directly with the content through a local Large Language Model (LLM), ensuring absolute data privacy and security.  
 # 🚀 Key FeaturesMultilingual PDF Processing: 
-Accurately extracts text from PDFs, supporting Vietnamese, English, and over 50 other languages.
-Real-time Q&A: Utilizes the Qwen2.5:7b model optimized for high-quality Vietnamese and multilingual support to provide concise answers.
-Semantic Search: Integrates the FAISS vector database and MPNet embedding models to find information based on context and meaning rather than just keywords.
-User-Friendly Web Interface: Built on the Streamlit framework, featuring a drag-and-drop file uploader and intuitive processing progress displays.
-Local & Offline Operation: Runs entirely on a personal computer via Ollama, requiring no internet connection after the initial model download and incurring no API costs.
+Accurately extracts text from PDFs, supporting Vietnamese, English, and over 50 other languages.  
+Real-time Q&A: Utilizes the Qwen2.5:7b model optimized for high-quality Vietnamese and multilingual support to provide concise answers.  
+Semantic Search: Integrates the FAISS vector database and MPNet embedding models to find information based on context and meaning rather than just keywords.  
+User-Friendly Web Interface: Built on the Streamlit framework, featuring a drag-and-drop file uploader and intuitive processing progress displays.  
+Local & Offline Operation: Runs entirely on a personal computer via Ollama, requiring no internet connection after the initial model download and incurring no API costs.  
 # 🛠 Technology Stack
 The system is designed with a multi-layer architecture:
 Presentation Layer: Streamlit (v1.41.1).
