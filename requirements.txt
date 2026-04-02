@@ -1,0 +1,12 @@
+streamlit==1.41.1
+langchain==0.3.16
+langchain-community==0.3.16
+faiss-cpu
+pdfplumber
+sentence-transformers
+huggingface-hub
+numpy
+pandas
+torch
+
+// chạy lệnh pip install -r requirements.txt để cài đặt các thư viện cần thiết cho dự án.
