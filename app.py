@@ -6,7 +6,13 @@ from langchain_community.document_loaders import PDFPlumberLoader, Docx2txtLoade
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
+from langchain_community.chat_models import ChatOllama
+from langchain_core.prompts import PromptTemplate
+from langchain_core.output_parsers import StrOutputParser
 
+# Cấu hình logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 def process_document(uploaded_file):
     """
@@ -46,98 +52,155 @@ def process_document(uploaded_file):
         if os.path.exists(tmp_file_path):
             os.remove(tmp_file_path)
 
-# UI Streamlit
-st.title("📄 SmartDoc AI - Document Processor")
+def generate_answer(user_input: str, retriever):
+    # 1. Lấy context từ VectorDB
+    docs = retriever.invoke(user_input)
+    context = "\n\n".join([doc.page_content for doc in docs])
+    
+    # 2. Xây dựng logic nhận diện ngôn ngữ
+    vietnamese_chars = 'áàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵđ'
+    is_vietnamese = any(char in user_input.lower() for char in vietnamese_chars)
+    
+    if is_vietnamese:
+        prompt_text = """Sử dụng ngữ cảnh sau đây để trả lời câu hỏi.
+Nếu bạn không biết, chỉ cần nói là bạn không biết.
+Trả lời ngắn gọn (3-4 câu) BẮT BUỘC bằng tiếng Việt.
 
-uploaded_file = st.file_uploader("Tải lên tài liệu của bạn (PDF, DOCX)", type=["pdf", "docx"])
+Ngữ cảnh: {context}
 
-if uploaded_file is not None:
-    with st.spinner("Đang xử lý tài liệu..."):
-        document_chunks = process_document(uploaded_file)
+Câu hỏi: {question}
+
+Trả lời:"""
+    else:
+        prompt_text = """Use the following context to answer the question.
+If you don't know the answer, just say you don't know.
+Keep answer concise (3-4 sentences).
+
+Context: {context}
+
+Question: {question}
+
+Answer:"""
         
-        if document_chunks:
-            st.success(f"Đã xử lý thành công! Chia thành {len(document_chunks)} đoạn (chunks).")
-            
-            # Hiển thị thử nội dung của chunk đầu tiên để kiểm tra
-            with st.expander("Xem trước Chunk đầu tiên"):
-                st.write(document_chunks[0].page_content)
-
-            with st.expander("Xem trước Chunk thứ hai"):
-                st.write(document_chunks[1].page_content)
-            
-            with st.expander("Xem trước Chunk thứ ba"):
-                st.write(document_chunks[2].page_content)
-
-# cấu hình logging
-
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
+    prompt = PromptTemplate.from_template(prompt_text)
+    
+    # 3. Khởi tạo LLM và chạy chuỗi
+    llm = ChatOllama(model="qwen2.5:7b", temperature=0.1)
+    chain = prompt | llm | StrOutputParser()
+    
+    return chain.invoke({"context": context, "question": user_input}), docs
 
 class VectorEngine:
     def __init__(self, model_name: str = "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"):
-
         logger.info(f"Initializing embeddings with model: {model_name}...")
-
         try:
-
             self.embedder = HuggingFaceEmbeddings(
                 model_name = model_name,
                 model_kwargs={'device': 'cpu'},
                 encode_kwargs={'normalize_embeddings': True}
             )
-
             logger.info("Embeddings initialized successfully!")
-
         except Exception as e:
-
             logger.error(f"Error downloading Hugging Face embeddings: {e}")
             raise
-
         self.vector_store = None
     
     def create_and_get_retriever(self, documents):
-
-        # Initialize Vector stroe and return retriever
         logger.info(f"Creating vector store with {len(documents)} documents chunks into FAISS...")
-
         try:
             self.vector_store = FAISS.from_documents(documents, self.embedder)
             logger.info("FAISS Vector store created successfully!")
-
             retriever = self.vector_store.as_retriever(
                 search_type = "similarity",
                 search_kwargs = {"k":3}
             )
             return retriever
-        
         except Exception as e:
             logger.error(f"Error creating FAISS vector store: {e}")
             raise
 
     def save_local_index(self, folder_path: str ="faiss_index"):
-
         if self.vector_store:
             self.vector_store.save_local(folder_path)
             logger.info(f"FAISS index saved locally at: {folder_path}")
-
         else:
             logger.warning(f"No vector store to save. Please create the vector store first.")
 
     def load_local_index(self, folder_path: str = "faiss_index"):
-
         try:
             self.vector_store = FAISS.load_local(
                 folder_path,
                 self.embedder,
                 allow_dangerous_deserialization = True
             )
-
             logger.info(f"FAISS index loaded successfully from: {folder_path}")
             return self.vector_store.as_retriever(search_kwargs={"k": 3})
-
         except Exception as e:
             logger.error(f"Error loading FAISS index from {folder_path}: {e}")
             return None
+
+# =========================================================
+# UI Streamlit
+# =========================================================
+st.set_page_config(page_title="SmartDoc AI", page_icon="📄")
+st.title("📄 SmartDoc AI - RAG & Chat")
+
+# Lưu trữ retriever và lịch sử chat trong session_state (ngăn chặn reset khi app chạy lại)
+if "retriever" not in st.session_state:
+    st.session_state.retriever = None
+
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+# Sidebar để quản lý tải lên
+with st.sidebar:
+    st.header("🗂️ Quản lý Tài liệu")
+    uploaded_file = st.file_uploader("Tải lên tài liệu (PDF, DOCX)", type=["pdf", "docx"])
+    
+    if uploaded_file is not None:
+        if st.button("Xử lý tài liệu"):
+            with st.spinner("Đang băm nhỏ dữ liệu và nhúng Vector..."):
+                document_chunks = process_document(uploaded_file)
+                if document_chunks:
+                    engine = VectorEngine()
+                    st.session_state.retriever = engine.create_and_get_retriever(document_chunks)
+                    st.success(f"Khởi tạo thành công! ({len(document_chunks)} chunks).")
+
+# Phần hiển thị Log Chat
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+        if "docs" in message and message["docs"]:
+            with st.expander("📄 Xem nguồn trích xuất"):
+                for i, d in enumerate(message["docs"]):
+                    st.write(f"**Trích đoạn {i+1}:** {d.page_content}")
+
+# Input Box cho User
+if st.session_state.retriever:
+    if query := st.chat_input("Hãy đặt câu hỏi về tài liệu của bạn..."):
+        # Hiển thị câu hỏi của User
+        st.chat_message("user").markdown(query)
+        st.session_state.messages.append({"role": "user", "content": query})
+
+        # Xử lý và hiển thị câu trả lời của AI
+        with st.chat_message("assistant"):
+            with st.spinner("Đang tìm kiếm và sinh câu trả lời..."):
+                try:
+                    response_text, docs = generate_answer(query, st.session_state.retriever)
+                    st.markdown(response_text)
+                    with st.expander("📄 Xem nguồn trích xuất"):
+                        for i, d in enumerate(docs):
+                            st.write(f"**Trích đoạn {i+1}:** {d.page_content}")
+                    
+                    st.session_state.messages.append({
+                        "role": "assistant", 
+                        "content": response_text, 
+                        "docs": docs
+                    })
+                except Exception as e:
+                    st.error(f"Lỗi: {str(e)}")
+else:
+    st.info("👈 Vui lòng tải lên và xử lý tài liệu ở thanh bên trái (Sidebar) để bắt đầu.")
 
 # =========================================================
 # PHẦN TEST CHẠY THỬ MÔ HÌNH (Viết sát lề trái)
