@@ -13,6 +13,8 @@ from langchain_core.output_parsers import StrOutputParser
 # Cấu hình logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+from langchain_community.llms import Ollama
+from langchain.chains import RetrievalQA
 
 def process_document(uploaded_file):
     """
@@ -75,6 +77,399 @@ Trả lời:"""
         prompt_text = """Use the following context to answer the question.
 If you don't know the answer, just say you don't know.
 Keep answer concise (3-4 sentences).
+#===========================GIAO DIEN=============================================
+
+# ------------------ CẤU HÌNH GIAO DIỆN ------------------
+st.set_page_config(
+    page_title="SmartDoc AI",
+    # page_icon="📄",
+    layout="wide"
+)
+
+# Custom CSS theo yêu cầu từ file (Section 5.1.1)
+st.markdown("""
+<style>
+    /* Primary Color: #007BFF */
+    .stButton > button {
+        background-color: #007BFF;
+        color: white;
+    }
+    .stButton > button:hover {
+        background-color: #0056b3;
+    }
+    /* Sidebar */
+    [data-testid="stSidebar"] {
+        background-color: #2C2F33;
+        color: #FFFFFF;
+    }
+    [data-testid="stSidebar"] * {
+        color: #FFFFFF;
+    }
+    /* Main background */
+    .main {
+        background-color: #F8F9FA;
+    }
+    .stApp {
+    background-color: #F8F9FA;
+    }
+    /* Text color */
+    body, .stMarkdown, .stTextInput > label {
+        color: #212529;
+    }
+    /* Upload button màu amber */
+    .upload-btn {
+        background-color: #FFC107;
+        color: black;
+    }
+    
+    /* Đổi màu đen cho tất cả text trong main area */
+    .main, .stAlert, .streamlit-expanderHeader, .stSpinner, .stFileUploader {
+        color: #000000 !important;
+    }
+            
+</style>
+""", unsafe_allow_html=True)
+
+# ------------------ SIDEBAR ------------------
+with st.sidebar:
+    
+    # Logo Header
+    st.markdown("""
+    <div style="display: flex; align-items: center; gap: 12px; padding: 12px 0 20px 0; border-bottom: 1px solid #4a4e54; margin-bottom: 20px;">
+        <div style="background-color: #007BFF; width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+            <span style="font-size: 20px;">🧠</span>
+        </div>
+        <div>
+            <h1 style="font-size: 18px; font-weight: 700; margin: 0;">SmartDoc AI</h1>
+            <p style="font-size: 15px; color: #adb5bd; margin: 2px 0 0 0;">Hệ thống xử lý tài liệu AI</p>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    
+    # Hướng dẫn sử dụng
+    st.markdown("""
+    <h2 style="font-size: 20px; font-weight: 600; letter-spacing: 1px; color: #adb5bd; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+        Hướng dẫn sử dụng
+    </h2>
+    """, unsafe_allow_html=True)
+    
+    # Các bước hướng dẫn
+    steps = [
+        ("1", "Tải lên file PDF cần phân tích"),
+        ("2", "Chờ hệ thống xử lý và phân tích"),
+        ("3", "Đặt câu hỏi về nội dung tài liệu"),
+        ("4", "Nhận câu trả lời thông minh từ AI")
+    ]
+    
+    for num, text in steps:
+        st.markdown(f"""
+        <div style="display: flex; gap: 12px; padding: 10px; background-color: #3a3e44; border-radius: 8px; margin-bottom: 8px; border: 1px solid #4a4e54;">
+            <div style="flex-shrink: 0; width: 24px; height: 24px; background-color: #007BFF; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                <span style="font-size: 11px; font-weight: bold; color: white;">{num}</span>
+            </div>
+            <p style="font-size: 13px; color: #e9ecef; margin: 0;">{text}</p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    st.markdown("---")
+    
+    # Cấu hình hệ thống
+    st.markdown("""
+    <h2 style="font-size: 20px; font-weight: 600; letter-spacing: 1px; color: #adb5bd; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+        Cấu hình hệ thống
+    </h2>
+    """, unsafe_allow_html=True)
+    
+    configs = [
+        ("Model", "Qwen2.5:7b"),
+        ("Context Length", "128K tokens"),
+        ("Temperature", "0.7"),
+        ("Max File Size", "50 MB"),
+        ("Chunk Size", "1000"),
+        ("Overlap", "100")
+    ]
+    
+    for label, value in configs:
+        st.markdown(f"""
+        <div style="display: flex; justify-content: space-between; padding: 10px; background-color: #35393e; border-radius: 8px; margin-bottom: 8px;">
+            <span style="color: #adb5bd; font-size: 13px;">{label}</span>
+            <span style="color: #FFC107; font-family: monospace; font-size: 13px;">{value}</span>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    
+
+# ------------------ MAIN AREA ------------------
+# st.title("SmartDoc AI - Intelligent Document Q&A System")
+
+st.markdown('<h1 style="color: #000000;">SmartDoc AI - Intelligent Document Q&A System</h1>', 
+            unsafe_allow_html=True)
+
+
+# st.markdown("### Hỏi đáp thông minh với tài liệu của bạn")
+st.markdown('<h3 style="color: #000000;">Hỏi đáp thông minh với tài liệu của bạn</h3>', 
+            unsafe_allow_html=True)
+
+# Khởi tạo session state
+if "vector_store" not in st.session_state:
+    st.session_state.vector_store = None
+if "chunks" not in st.session_state:
+    st.session_state.chunks = None
+
+# ------------------ HÀM XỬ LÝ DOCUMENT ------------------
+# def process_document(uploaded_file):
+
+#     """Xử lý file PDF hoặc DOCX -> chunks"""
+    
+#     with tempfile.NamedTemporaryFile(delete=False, suffix=f".{uploaded_file.name.split('.')[-1]}") as tmp_file:
+#         tmp_file.write(uploaded_file.getbuffer())
+#         tmp_path = tmp_file.name
+
+#     # Load document
+#     if uploaded_file.name.endswith(".pdf"):
+#         loader = PDFPlumberLoader(tmp_path)
+#     elif uploaded_file.name.endswith(".docx"):
+#         loader = Docx2txtLoader(tmp_path)
+#     else:
+#         st.error("Định dạng không hỗ trợ")
+#         return None
+
+#     docs = loader.load()
+    
+#     # Split text
+#     text_splitter = RecursiveCharacterTextSplitter(
+#         chunk_size=1000,
+#         chunk_overlap=100
+#     )
+#     chunks = text_splitter.split_documents(docs)
+    
+#     # Clean temp file
+#     os.unlink(tmp_path)
+    
+#     return chunks
+
+# ------------------ TẠO VECTOR STORE ------------------
+def create_vector_store(chunks):
+    embeddings = HuggingFaceEmbeddings(
+        model_name="sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
+        model_kwargs={'device': 'cpu'},
+        encode_kwargs={'normalize_embeddings': True}
+    )
+    vector_store = FAISS.from_documents(chunks, embeddings)
+    return vector_store
+
+# ------------------ UPLOAD FILE ------------------
+
+st.markdown("""
+<style>
+    /* Custom label cho file uploader */
+    .custom-upload-label {
+        color: #000000;
+        font-weight: 500;
+        margin-bottom: 8px;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+st.markdown('<p class="custom-upload-label">📂 Tải lên tài liệu của bạn (PDF, DOCX)</p>', 
+            unsafe_allow_html=True)
+
+uploaded_file = st.file_uploader(
+    "",
+    type=["pdf", "docx"],
+    help="Hỗ trợ PDF và DOCX, tối đa 200MB mỗi file"
+)
+
+if uploaded_file is not None:
+    with st.spinner("Đang xử lý tài liệu..."):
+        document_chunks = process_document(uploaded_file)
+        
+        # if document_chunks:
+        #     st.session_state.chunks = document_chunks
+        #     st.success(f"Đã xử lý thành công! Chia thành {len(document_chunks)} đoạn (chunks).")
+            
+        #     # Hiển thị xem trước chunks (theo yêu cầu)
+        #     with st.expander("Xem trước Chunk đầu tiên"):
+        #         st.write(document_chunks[0].page_content[:500] + "...")
+            
+        #     if len(document_chunks) > 1:
+        #         with st.expander("Xem trước Chunk thứ hai"):
+        #             st.write(document_chunks[1].page_content[:500] + "...")
+            
+        #     if len(document_chunks) > 2:
+        #         with st.expander("Xem trước Chunk thứ ba"):
+        #             st.write(document_chunks[2].page_content[:500] + "...")
+            
+        #     # Tạo vector store
+        #     with st.spinner("Đang tạo embedding và vector store..."):
+        #         st.session_state.vector_store = create_vector_store(document_chunks)
+        #         st.success("Vector store sẵn sàng! Bạn có thể đặt câu hỏi bên dưới.")
+        # else:
+        #     st.error("Không thể xử lý tài liệu. Vui lòng thử lại.")
+
+        if document_chunks:
+            st.session_state.chunks = document_chunks
+            
+            # Thay thế st.success bằng custom div
+            st.markdown(f"""
+            <div style="
+                color: #000000;
+                background-color: #d4edda;
+                padding: 12px;
+                border-radius: 8px;
+                border-left: 4px solid #28a745;
+                margin: 10px 0;">
+                ✅ Đã xử lý thành công! Chia thành {len(document_chunks)} đoạn (chunks).
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Custom expander cho Chunk đầu tiên
+            st.markdown("""
+            <details style="margin: 10px 0; border: 1px solid #dee2e6; border-radius: 8px; padding: 8px;">
+                <summary style="color: #000000; font-weight: 600; cursor: pointer; padding: 8px;">
+                    📄 Xem trước Chunk đầu tiên
+                </summary>
+                <div style="color: #000000; padding: 12px; background-color: #f8f9fa; border-radius: 4px; margin-top: 8px;">
+            """ + document_chunks[0].page_content[:500] + "..."
+            """
+                </div>
+            </details>
+            """, unsafe_allow_html=True)
+            
+            # Custom expander cho Chunk thứ hai
+            if len(document_chunks) > 1:
+                st.markdown("""
+                <details style="margin: 10px 0; border: 1px solid #dee2e6; border-radius: 8px; padding: 8px;">
+                    <summary style="color: #000000; font-weight: 600; cursor: pointer; padding: 8px;">
+                        📄 Xem trước Chunk thứ hai
+                    </summary>
+                    <div style="color: #000000; padding: 12px; background-color: #f8f9fa; border-radius: 4px; margin-top: 8px;">
+                """ + document_chunks[1].page_content[:500] + "..."
+                """
+                    </div>
+                </details>
+                """, unsafe_allow_html=True)
+            
+            # Custom expander cho Chunk thứ ba
+            if len(document_chunks) > 2:
+                st.markdown("""
+                <details style="margin: 10px 0; border: 1px solid #dee2e6; border-radius: 8px; padding: 8px;">
+                    <summary style="color: #000000; font-weight: 600; cursor: pointer; padding: 8px;">
+                        📄 Xem trước Chunk thứ ba
+                    </summary>
+                    <div style="color: #000000; padding: 12px; background-color: #f8f9fa; border-radius: 4px; margin-top: 8px;">
+                """ + document_chunks[2].page_content[:500] + "..."
+                """
+                    </div>
+                </details>
+                """, unsafe_allow_html=True)
+            
+            # Custom spinner và success message
+            with st.spinner(""):
+                st.markdown('<p style="color: #000000;">⏳ Đang tạo embedding và vector store...</p>', 
+                        unsafe_allow_html=True)
+                
+                st.session_state.vector_store = create_vector_store(document_chunks)
+                
+                st.markdown("""
+                <div style="
+                    color: #000000;
+                    background-color: #d4edda;
+                    padding: 12px;
+                    border-radius: 8px;
+                    border-left: 4px solid #28a745;
+                    margin: 10px 0;">
+                    ✅ Vector store sẵn sàng! Bạn có thể đặt câu hỏi bên dưới.
+                </div>
+                """, unsafe_allow_html=True)
+        else:
+            # Thay thế st.error
+            st.markdown("""
+            <div style="
+                color: #000000;
+                background-color: #f8d7da;
+                padding: 12px;
+                border-radius: 8px;
+                border-left: 4px solid #dc3545;
+                margin: 10px 0;">
+                ❌ Không thể xử lý tài liệu. Vui lòng thử lại.
+            </div>
+            """, unsafe_allow_html=True)
+
+# ------------------ PHẦN ĐẶT CÂU HỎI ------------------
+if st.session_state.vector_store is not None:
+    st.markdown("---")
+    # st.subheader("Đặt câu hỏi về tài liệu")
+    st.markdown('<h3 style="color: #000000;">Đặt câu hỏi về tài liệu</h3>', 
+            unsafe_allow_html=True)
+    
+    # Tạo retriever
+    retriever = st.session_state.vector_store.as_retriever(
+        search_type="similarity",
+        search_kwargs={"k": 3}
+    )
+    
+    # Kết nối LLM (Ollama)
+    try:
+        llm = Ollama(model="qwen2.5:7b", temperature=0.7)
+        qa_chain = RetrievalQA.from_chain_type(
+            llm=llm,
+            chain_type="stuff",
+            retriever=retriever,
+            return_source_documents=True
+        )
+        
+        user_question = st.text_input("Nhập câu hỏi của bạn:", placeholder="Ví dụ: Nội dung chính của tài liệu này là gì?")
+        
+        if user_question:
+            with st.spinner("Đang suy nghĩ..."):
+                response = qa_chain.invoke({"query": user_question})
+                answer = response['result']
+                
+                # Hiển thị câu trả lời
+                st.markdown("### Câu trả lời:")
+                st.success(answer)
+                
+                # Tùy chọn xem source chunks
+                with st.expander("Xem nguồn tham khảo (chunks liên quan)"):
+                    for i, doc in enumerate(response['source_documents']):
+                        st.markdown(f"**Chunk {i+1}:**")
+                        st.write(doc.page_content[:400] + "...")
+                        st.markdown("---")
+    
+    # except Exception as e:
+    #     st.error(f"Lỗi kết nối LLM: {e}\nVui lòng đảm bảo Ollama đang chạy và đã pull model qwen2.5:7b")
+    except Exception as e:
+        st.markdown(f"""
+        <div style="
+            color: #000000;
+            background-color: #f8d7da;
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 4px solid #dc3545;
+            margin: 10px 0;">
+            ❌ Lỗi kết nối LLM: {e}<br>
+            Vui lòng đảm bảo Ollama đang chạy và đã pull model qwen2.5:7b
+        </div>
+        """, unsafe_allow_html=True)
+else:
+    # st.info("Vui lòng tải lên tài liệu trước khi đặt câu hỏi.")
+    st.markdown("""
+    <div style="
+        background-color: #e3f2fd; 
+        padding: 12px; 
+        border-radius: 8px; 
+        border-left: 4px solid #007BFF;
+        color: #000000;
+        font-weight: 500;">
+        Vui lòng tải lên tài liệu trước khi đặt câu hỏi.
+    </div>
+    """, unsafe_allow_html=True)
+
+
+
+#=========================================================================
 
 Context: {context}
 
