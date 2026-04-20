@@ -14,7 +14,7 @@ Data Layer: FAISS (v1.9.0) for vector storage and PDFPlumber for precise documen
 Model Layer: Ollama runtime powering the Qwen2.5:7b model.  
 # 📋 System Requirements
 OS: Windows, macOS, or Linux.  
-Language: Python 3.13+.  
+Language: Python 3.8+.  
 Software: Ollama runtime.  
 Package Manager: pip.  
 # 🔧 Installation and Usage
