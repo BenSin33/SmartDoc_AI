@@ -1,3 +1,9 @@
+from langchain.retrievers import ContextualCompressionRetriever # thêm thư viện cho Re-ranking
+from langchain.retrievers.document_compressors import CrossEncoderReranker # thêm thư viện cho Re-ranking
+from langchain_community.cross_encoders import HuggingFaceCrossEncoder # thêm thư viện cho Re-ranking
+import datetime
+from langchain_community.retrievers import BM25Retriever
+from langchain.retrievers import EnsembleRetriever
 import logging
 import os
 import tempfile
@@ -42,6 +48,15 @@ def process_document(uploaded_file, chunk_size, chunk_overlap):
         if not docs:
             st.warning("Không tìm thấy nội dung văn bản nào trong tài liệu này.")
             return None
+        
+        # Câu 8.2.8: Multi-documents RAG với meatadata filtering 
+        uploaded_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        fileName = uploaded_file.name
+
+        for doc in docs:
+            doc.metadata["source_file"] = fileName
+            doc.metadata["uploaded_date"] = uploaded_date
+            doc.metadata["file_type"] = file_extension
 
         # Bước 2: Text Splitter
         text_splitter = RecursiveCharacterTextSplitter(
@@ -355,25 +370,37 @@ def create_vector_store(chunks):
 st.markdown('<p class="custom-upload-label">📂 Tải lên tài liệu của bạn (PDF, DOCX)</p>', 
             unsafe_allow_html=True)
 
-uploaded_file = st.file_uploader(
+danh_sach_tai_len = st.file_uploader(
     "",
     type=["pdf", "docx"],
-    help="Hỗ trợ PDF và DOCX, tối đa 200MB mỗi file"
+    accept_multiple_files=True, # Đã bật tính năng cho phép tải lên nhiều file
+    help="Hỗ trợ PDF và DOCX, có thể chọn nhiều file cùng lúc"
 )
 
-if uploaded_file is not None:
-    st.session_state["pdf_bytes"] = uploaded_file.getvalue()
+# Khởi tạo dict lưu trữ byte của file PDF để hiển thị (nếu chưa có)
+if "pdf_bytes_dict" not in st.session_state:
+    st.session_state.pdf_bytes_dict = {}
 
-if uploaded_file is not None:
-    with st.spinner("Đang xử lý tài liệu..."):
-        document_chunks = process_document(
-            uploaded_file,
-            st.session_state.chunk_size,
-            st.session_state.chunk_overlap
-        )
+if danh_sach_tai_len:
+    # Lưu byte của các file PDF để tí nữa hiển thị iframe
+    for file in danh_sach_tai_len:
+        if file.name.endswith('.pdf'):
+            st.session_state.pdf_bytes_dict[file.name] = file.getvalue()
+
+    all_chunks = []
+    with st.spinner("Đang xử lý các tài liệu..."):
+        # Vòng lặp gom chunks của tất cả các file lại
+        for file in danh_sach_tai_len:
+            chunks = process_document(
+                file,
+                st.session_state.chunk_size,
+                st.session_state.chunk_overlap
+            )
+            if chunks:
+                all_chunks.extend(chunks)
         
-        if document_chunks:
-            st.session_state.chunks = document_chunks
+        if all_chunks:
+            st.session_state.chunks = all_chunks
             
             # Thay thế st.success bằng custom div
             st.markdown(f"""
@@ -384,57 +411,29 @@ if uploaded_file is not None:
                 border-radius: 8px;
                 border-left: 4px solid #28a745;
                 margin: 10px 0;">
-                ✅ Đã xử lý thành công! Chia thành {len(document_chunks)} đoạn (chunks).
+                ✅ Đã xử lý thành công {len(danh_sach_tai_len)} tài liệu! Tổng cộng {len(all_chunks)} đoạn (chunks).
             </div>
             """, unsafe_allow_html=True)
             
-            # Custom expander cho Chunk đầu tiên
+            # Custom expander cho Chunk đầu tiên để test
             st.markdown("""
             <details style="margin: 10px 0; border: 1px solid #dee2e6; border-radius: 8px; padding: 8px;">
                 <summary style="color: #212529; font-weight: 600; cursor: pointer; padding: 8px;">
                     📄 Xem trước Chunk đầu tiên
                 </summary>
                 <div style="color: #212529; padding: 12px; background-color: #F8F9FA; border-radius: 4px; margin-top: 8px;">
-            """ + document_chunks[0].page_content[:500] + "..."
+            """ + all_chunks[0].page_content[:500] + "..."
             """
                 </div>
             </details>
             """, unsafe_allow_html=True)
-            
-            # Custom expander cho Chunk thứ hai
-            if len(document_chunks) > 1:
-                st.markdown("""
-                <details style="margin: 10px 0; border: 1px solid #dee2e6; border-radius: 8px; padding: 8px;">
-                    <summary style="color: #212529; font-weight: 600; cursor: pointer; padding: 8px;">
-                        📄 Xem trước Chunk thứ hai
-                    </summary>
-                    <div style="color: #212529; padding: 12px; background-color: #F8F9FA; border-radius: 4px; margin-top: 8px;">
-                """ + document_chunks[1].page_content[:500] + "..."
-                """
-                    </div>
-                </details>
-                """, unsafe_allow_html=True)
-            
-            # Custom expander cho Chunk thứ ba
-            if len(document_chunks) > 2:
-                st.markdown("""
-                <details style="margin: 10px 0; border: 1px solid #dee2e6; border-radius: 8px; padding: 8px;">
-                    <summary style="color: #212529; font-weight: 600; cursor: pointer; padding: 8px;">
-                        📄 Xem trước Chunk thứ ba
-                    </summary>
-                    <div style="color: #212529; padding: 12px; background-color: #F8F9FA; border-radius: 4px; margin-top: 8px;">
-                """ + document_chunks[2].page_content[:500] + "..."
-                """
-                    </div>
-                </details>
-                """, unsafe_allow_html=True)
             
             # Custom spinner và success message
             with st.spinner(""):
                 st.markdown('<p style="color: #212529;">⏳ Đang tạo embedding và vector store...</p>', 
                         unsafe_allow_html=True)
                 
-                st.session_state.vector_store = create_vector_store(document_chunks)
+                st.session_state.vector_store = create_vector_store(all_chunks)
                 
                 st.markdown("""
                 <div style="
@@ -457,7 +456,7 @@ if uploaded_file is not None:
                 border-radius: 8px;
                 border-left: 4px solid #dc3545;
                 margin: 10px 0;">
-                ❌ Không thể xử lý tài liệu. Vui lòng thử lại.
+                ❌ Không thể xử lý các tài liệu này. Vui lòng thử lại.
             </div>
             """, unsafe_allow_html=True)
 
@@ -466,6 +465,30 @@ if st.session_state.vector_store is not None:
     st.markdown("---")
     st.markdown('<h3 style="color: #212529;">Đặt câu hỏi về tài liệu</h3>', 
             unsafe_allow_html=True)
+    
+    search_mode = st.radio(
+        "Chọn chế độ truy xuất (để so sánh):",
+        ["Hybrid (Vector + từ khoá)", "Chỉ Vector Search (Pure Semantic)"],
+        horizontal=True
+    )
+
+    danh_sach_file = list(set([chunk.metadata.get("source_file") 
+                               for chunk in st.session_state.chunks 
+                               if chunk.metadata.get("source_file")]))
+
+    file_can_loc = st.selectbox("Lọc tìm kiếm theo tài liệu (Tuý chọn): ", ["Toàn bộ tài liệu"] + danh_sach_file)
+
+    # Câu 9 & 10 Tính năng nâng cao:
+
+    st.markdown("---")
+    st.markdown("<b style='color: #212529;'>Tính năng nâng cao:</b>", unsafe_allow_html=True)
+    col_adv1, col_adv2 = st.columns(2)
+    with col_adv1:
+        # câu 9:
+        use_reranker = st.checkbox("Bật Re-ranking (MMR) để tăng tính đáng tin và đa dạng của kết quả.", help = "Sử dụng Cross-Encoder để sắp xếp lại tài liệu")
+    with col_adv2:
+        #câu 10:
+        use_self_rag = st.checkbox("Bật Sè=lf-RAG để LLM tự đánh giá và chọn lọc tài liệu phù hợp với câu hỏi.", help="tự đông tối ưu câu hỏi và tự đánh giá (Confidence Score)")
     
     # Tạo retriever với similarity
     # retriever = st.session_state.vector_store.as_retriever(
@@ -476,37 +499,64 @@ if st.session_state.vector_store is not None:
     # Lưu ý mmr sẽ có tốc độ chậm hơn
 
     # Tạo retriever với chế độ MMR để tăng tính đa dạng thông tin
-    retriever = st.session_state.vector_store.as_retriever(
+    # 1. FAISS Retriever (Semantic)
+
+    faiss_kwargs={"k": 5, "fetch_k": 20, "lambda_mult": 0.7}
+    if file_can_loc != "Toàn bộ tài liệu":
+        faiss_kwargs["filter"] = {"source_file": file_can_loc}
+
+    faiss_retriever = st.session_state.vector_store.as_retriever(
         search_type="mmr",
-        search_kwargs={
-            "k": 5,                # Lấy ra 3 đoạn cuối cùng cho AI
-            "fetch_k": 20,         # Quét trước 20 đoạn tiềm năng
-            "lambda_mult": 0.7     # Độ đa dạng (0.5 - 0.7 là mức ổn định)
-        }
+        search_kwargs=faiss_kwargs
     )
+    
+    # 2. BM25 Retriever (Keyword)
+    bm25_retriever = BM25Retriever.from_documents(st.session_state.chunks)
+    bm25_retriever.k = 5
+    
+    # 3. Kết hợp Hybrid
+    hybrid_retriever = EnsembleRetriever(
+        retrievers=[bm25_retriever, faiss_retriever],
+        weights=[0.3, 0.7]
+    )
+
+    # Điều kiện chọn retriever theo chế độ người dùng chọn
+    if search_mode == "Hybrid (Vector + từ khoá)":
+        active_retriever = hybrid_retriever
+    else:
+        active_retriever = faiss_retriever
+
+    # Logic Re-ranking cho câu 9:
+    if use_reranker:
+        with st.spinner("Đang tải mô hình Cross-Encoder (Lần đầu sẽ tốn chút thời gian)..."):
+            cross_model = HuggingFaceCrossEncoder(model_name="cross-encoder/ms-marco-MiniLM-L-6-v2")
+            compressor = CrossEncoderReranker(model = cross_model, top_n=3) # chỉ lấy top 3 chunk tốt nhất sau khi re-rank
+
+            # Gói retriever hiện tại vào trong bộ nén (compressor) để tự động re-rank mỗi khi truy xuất
+            #compressor : nhận vào một list các document trả về từ retriever, 
+            # đánh giá lại chúng dựa trên sự phù hợp với câu hỏi, 
+            # và chỉ giữ lại top N tài liệu tốt nhất để đưa vào LLM. 
+            # Điều này giúp tăng chất lượng câu trả lời bằng cách đảm bảo rằng LLM chỉ phải xử lý những thông tin liên quan nhất.
+            active_retriever = ContextualCompressionRetriever(
+                base_compressor=compressor,
+                base_retriever=active_retriever
+            )
+            
     
     # Kết nối LLM (Ollama)
     try:
         llm = Ollama(model="qwen2.5:7b", temperature=0.2)
         
         # 1. ĐỊNH NGHĨA PROMPT TEMPLATE TỐI ƯU TIẾNG VIỆT
+        # ====== [CÂU 10]: TÍCH HỢP CONFIDENCE SCORING VÀO PROMPT ======
         prompt_template = """
             [INSTRUCTION]
-            Bạn là hệ thống hỏi đáp tài liệu (RAG). Nhiệm vụ của bạn là trả lời câu hỏi CHỈ dựa trên Context được cung cấp.
+            Bạn là hệ thống RAG thông minh. Nhiệm vụ của bạn là trả lời câu hỏi CHỈ dựa trên Context được cung cấp.
 
-            [CONSTRAINT - BẮT BUỘC TUÂN THỦ]
-            1. CHỈ sử dụng thông tin trong Context. Không suy diễn, không bổ sung kiến thức bên ngoài.
-            2. Nếu Context KHÔNG chứa thông tin để trả lời:
-            -> CHỈ được trả lời đúng 1 câu duy nhất:
-            "Tôi không tìm thấy thông tin này trong tài liệu được cung cấp."
-            -> KHÔNG được viết thêm bất kỳ nội dung nào khác.
-            3. Trả lời bằng Tiếng Việt 100%.
-            4. Trình bày:
-            - Ngắn gọn
-            - Rõ ràng
-            - Dùng bullet points nếu có nhiều ý
-            5. Không lặp lại nguyên văn Context, phải diễn giải lại.
-            6. Không thêm giải thích ngoài câu hỏi.
+            [CONSTRAINT]
+            1. CHỈ sử dụng thông tin trong Context. Không bổ sung kiến thức bên ngoài.
+            2. Trả lời bằng Tiếng Việt 100%, diễn giải rõ ràng.
+            3. [QUAN TRỌNG]: Ở cuối câu trả lời, bạn BẮT BUỘC phải tự đánh giá độ tự tin (Confidence Score) về câu trả lời của mình dựa trên ngữ cảnh được cung cấp. Định dạng: "🎯 Độ tự tin (Confidence Score): X/100" và giải thích ngắn gọn tại sao bạn chấm điểm đó.
 
             [CONTEXT]
             {context}
@@ -526,7 +576,7 @@ if st.session_state.vector_store is not None:
         # 3. ĐƯA PROMPT VÀO CHAIN
         qa_chain = ConversationalRetrievalChain.from_llm(
             llm=llm,
-            retriever=retriever,
+            retriever=active_retriever,
             memory=st.session_state.memory,
             return_source_documents=True,
             combine_docs_chain_kwargs={"prompt": QA_PROMPT} 
@@ -551,8 +601,19 @@ if st.session_state.vector_store is not None:
             return highlighted
 
         if submitted and user_question:
+
+            final_question= user_question
+
+            if use_self_rag:
+                with st.spinner("Self-RAG đang phân tích và tối ưu hoá câu hỏi (Query rewriting)..."):
+                    # yêu cầu LLM tự đánh giá và viết lại câu hỏi tốt hơn
+                    rewrite_prompt=f"Nhiệm vụ của bạn là viết lại câu hỏi sau một cách rõ ràng, chi tiết hơn để hệ thống tìm kiếm tài liệu có thể hiểu dễ nhất. CHỈ TRẢ VỀ CÂU HỎI ĐÃ VIẾT LẠI"
+                    final_question= llm.invoke(rewrite_prompt)
+
+                    st.info(f"** Câu hỏi đã được tối ưu lại: **{final_question}")
+
             with st.spinner("Đang suy nghĩ..."):
-                response = qa_chain.invoke({"question": user_question})
+                response = qa_chain.invoke({"question": final_question})
                 answer = response['answer']
 
                 # ===== ANSWER =====
@@ -576,39 +637,25 @@ if st.session_state.vector_store is not None:
                 with st.expander("📚 Nguồn tham khảo"):
                     for i, doc in enumerate(response['source_documents']):
                         page = doc.metadata.get("page", "Không rõ")
+                        # --- THÊM 2 DÒNG LẤY METADATA NÀY ---
+                        source_file = doc.metadata.get("source_file", "Không rõ")
+                        uploaded_date = doc.metadata.get("uploaded_date", "Không rõ")
+                        
                         highlighted = highlight_text(doc.page_content, answer)
 
+                        # Cập nhật lại chuỗi in đậm hiển thị tên file
                         st.markdown(f"""
-                        <div style="
-                            padding: 12px;
-                            background-color: #ffffff;
-                            border: 1px solid #dee2e6;
-                            border-radius: 8px;
-                            margin-bottom: 12px;
-                        ">
-                            <b>📄 Trang: {page}</b><br><br>
+                        <div style="padding: 12px; background-color: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; margin-bottom: 12px;">
+                            <b>📄 File: {source_file} | Trang: {page}</b> (Tải lên: {uploaded_date})<br><br>
                             <div style="line-height:1.6;">
                                 {highlighted[:500]}...
                             </div>
                         </div>
                         """, unsafe_allow_html=True)
-
-                        # BUTTON
-                        if st.button(f"Xem chi tiết Chunk {i+1}", key=f"view_{i}"):
+                        
+                        # Fix lại nút button để tránh trùng key Streamlit khi có nhiều file
+                        if st.button(f"Xem chi tiết Chunk {i+1} ({source_file})", key=f"view_{i}_{source_file}"):
                             st.session_state["selected_chunk"] = doc.page_content
-
-                        # PDF VIEWER
-                        if "pdf_bytes" in st.session_state:
-                            import base64
-                            base64_pdf = base64.b64encode(st.session_state["pdf_bytes"]).decode('utf-8')
-
-                            pdf_display = f"""
-                            <iframe src="data:application/pdf;base64,{base64_pdf}#page={page}"
-                            width="100%" height="500" type="application/pdf"
-                            style="border:1px solid #ccc;"></iframe>
-                            """
-
-                            st.markdown(pdf_display, unsafe_allow_html=True)
 
                 # ===== FULL CONTENT =====
                 if "selected_chunk" in st.session_state:
