@@ -1,60 +1,95 @@
-# SmartDoc AI
-Intelligent Document Q&A SystemSmartDoc AI is an intelligent document questioning and answering system built using Retrieval-Augmented Generation (RAG). This system allows users to upload PDF files and interact directly with the content through a local Large Language Model (LLM), ensuring absolute data privacy and security.  
-# 🚀 Key FeaturesMultilingual PDF Processing: 
-Accurately extracts text from PDFs, supporting Vietnamese, English, and over 50 other languages.  
-Real-time Q&A: Utilizes the Qwen2.5:7b model optimized for high-quality Vietnamese and multilingual support to provide concise answers.  
-Semantic Search: Integrates the FAISS vector database and MPNet embedding models to find information based on context and meaning rather than just keywords.  
-User-Friendly Web Interface: Built on the Streamlit framework, featuring a drag-and-drop file uploader and intuitive processing progress displays.  
-Local & Offline Operation: Runs entirely on a personal computer via Ollama, requiring no internet connection after the initial model download and incurring no API costs.  
-# 🛠 Technology Stack
-The system is designed with a multi-layer architecture:  
-Presentation Layer: Streamlit (v1.41.1).  
-Application Layer: LangChain (v0.3.16).  
-Data Layer: FAISS (v1.9.0) for vector storage and PDFPlumber for precise document loading.  
-Model Layer: Ollama runtime powering the Qwen2.5:7b model.  
-# 📋 System Requirements
-OS: Windows, macOS, or Linux.  
-Language: Python 3.8+.  
-Software: Ollama runtime.  
-Package Manager: pip.  
-# 🔧 Installation and Usage
-1. Environment SetupBash# Clone the repository  
+📑 SmartDoc AI: Intelligent Document Q&A System
+SmartDoc AI là hệ thống hỏi đáp tài liệu thông minh dựa trên kỹ thuật Retrieval-Augmented Generation (RAG). Hệ thống cho phép người dùng tương tác trực tiếp với các tệp PDF thông qua mô hình ngôn ngữ lớn (LLM) chạy cục bộ, đảm bảo tính riêng tư tuyệt đối và bảo mật dữ liệu.
 
-git clone [repository-url]  
+🚀 Tính năng nổi bật
+Xử lý tài liệu đa ngôn ngữ: Trích xuất văn bản từ PDF chính xác, hỗ trợ tiếng Việt, tiếng Anh và hơn 50 ngôn ngữ khác.
 
-cd Project-LLMs-Rag-Agent  
+Hỏi đáp thời gian thực: Sử dụng model Qwen2.5:7b tối ưu cho tiếng Việt, cung cấp câu trả lời mạch lạc, đúng trọng tâm.
 
---Create and activate a virtual environment  
+Tìm kiếm ngữ nghĩa (Semantic Search): Kết hợp cơ sở dữ liệu vector FAISS và mô hình embedding MPNet để hiểu ngữ cảnh thay vì chỉ khớp từ khóa đơn thuần.
 
-python -m venv venv  
+Hoạt động Offline hoàn toàn: Chạy cục bộ thông qua Ollama, không cần kết nối internet sau khi tải model, không phát sinh chi phí API.
 
---For Windows:  
+Giao diện thân thiện: Phát triển trên nền tảng Streamlit với tính năng kéo thả tệp và hiển thị tiến trình xử lý trực quan.
 
-venv\Scripts\activate  
+🛠 Kiến trúc hệ thống
+Dự án được thiết kế theo kiến trúc đa lớp đảm bảo tính module hóa:
 
---For Linux/Mac:  
+Presentation Layer: Streamlit (v1.41.1) - Xử lý giao diện người dùng.
 
-source venv/bin/activate  
+Application Layer: LangChain (v0.3.16) - Điều phối luồng dữ liệu RAG.
 
---Install required dependencies:  
+Data Layer: * PDFPlumber: Trích xuất nội dung văn bản chất lượng cao.
 
-pip install -r requirements.txt  
+FAISS (v1.9.0): Lưu trữ và truy vấn vector.
 
-2. Model Installation  
-   (Ollama)Download and install Ollama from ollama.ai, then pull the required model:  
-   ollama pull qwen2.5:7b  
-3. Running the Application:  
-   streamlit run app.py  
-Once started, access the interface at http://localhost:8501 in your web browser.  
+Model Layer: Ollama runtime vận hành model Qwen2.5:7b.
 
-# 📂 Project Structure
-app.py: The main application entry point.  
-requirements.txt: List of Python dependencies.  
-data/: Directory containing sample PDF documents.  
-documentation/: Project reports and LaTeX documentation.  
-venv/: Python virtual environment.  
+📋 Yêu cầu hệ thống
+Hệ điều hành: Windows, macOS, hoặc Linux.
 
-# 💡 Usage TipsSpecific Questions: 
-For the most accurate results, ask specific and clear questions using keywords found in the document.  
-Language Detection: The system automatically detects the input language and responds accordingly in either Vietnamese or English.  
-Troubleshooting: If the system fails to respond, ensure that the Ollama service is running on your machine.This project was developed for the Open Source Software Development (OSSD) course at the Faculty of Information Technology - Saigon University (2026).  
+Ngôn ngữ: Python 3.8 trở lên.
+
+Phần mềm hỗ trợ: Ollama runtime.
+
+RAM đề nghị: Tối thiểu 8GB (Khuyến khích 16GB để model chạy mượt mà).
+
+🔧 Cài đặt & Sử dụng
+1. Thiết lập môi trường
+# Clone repository
+git clone https://github.com/BenSin33/SmartDoc_AI.git
+cd SmartDoc_AI
+
+# Tạo và kích hoạt môi trường ảo
+python -m venv venv
+
+# Windows:
+venv\Scripts\activate
+# Linux/Mac:
+source venv/bin/activate
+
+# Cài đặt các thư viện cần thiết
+pip install -r requirements.txt
+
+2. Cài đặt Model (Ollama)
+Tải và cài đặt Ollama tại ollama.ai, sau đó thực hiện lệnh:
+ollama pull qwen2.5:7b
+
+3. Chạy ứng dụng
+streamlit run app.py
+
+📂 Cấu trúc dự án
+├── app.py                # Điểm khởi chạy ứng dụng chính
+├── requirements.txt      # Danh sách các thư viện phụ thuộc
+├── data/                 # Thư mục chứa các tài liệu PDF mẫu
+├── documentation/        # Báo cáo dự án và tài liệu LaTeX
+└── venv/                 # Môi trường ảo Python
+
+💡 Lưu ý khi sử dụng
+Đặt câu hỏi cụ thể: Để có kết quả tốt nhất, hãy đưa ra câu hỏi rõ ràng dựa trên nội dung có trong tài liệu đã upload.
+
+Tự động nhận diện ngôn ngữ: Hệ thống sẽ tự động phản hồi bằng ngôn ngữ tương ứng với câu hỏi của bạn (Tiếng Việt hoặc Tiếng Anh).
+
+Xử lý sự cố: Nếu hệ thống không phản hồi, hãy kiểm tra chắc chắn rằng dịch vụ Ollama đang chạy ngầm trên máy tính của bạn.
+
+MIT License
+
+Copyright (c) 2026 Nhóm 15 môn học OSSD Trường Đại học Sài Gòn
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
