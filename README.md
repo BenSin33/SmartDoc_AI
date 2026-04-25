@@ -1,95 +1,112 @@
-📑 SmartDoc AI: Intelligent Document Q&A System
-SmartDoc AI là hệ thống hỏi đáp tài liệu thông minh dựa trên kỹ thuật Retrieval-Augmented Generation (RAG). Hệ thống cho phép người dùng tương tác trực tiếp với các tệp PDF thông qua mô hình ngôn ngữ lớn (LLM) chạy cục bộ, đảm bảo tính riêng tư tuyệt đối và bảo mật dữ liệu.
+📑 SmartDoc AI — Intelligent Document Q&A System
 
-🚀 Tính năng nổi bật
-Xử lý tài liệu đa ngôn ngữ: Trích xuất văn bản từ PDF chính xác, hỗ trợ tiếng Việt, tiếng Anh và hơn 50 ngôn ngữ khác.
+🚀 Hệ thống hỏi đáp tài liệu thông minh sử dụng Retrieval-Augmented Generation (RAG)
+🔒 Chạy hoàn toàn cục bộ — bảo mật dữ liệu tuyệt đối
 
-Hỏi đáp thời gian thực: Sử dụng model Qwen2.5:7b tối ưu cho tiếng Việt, cung cấp câu trả lời mạch lạc, đúng trọng tâm.
+📌 Giới thiệu
 
-Tìm kiếm ngữ nghĩa (Semantic Search): Kết hợp cơ sở dữ liệu vector FAISS và mô hình embedding MPNet để hiểu ngữ cảnh thay vì chỉ khớp từ khóa đơn thuần.
+SmartDoc AI là một hệ thống cho phép người dùng đặt câu hỏi trực tiếp trên tài liệu PDF bằng cách kết hợp giữa:
 
-Hoạt động Offline hoàn toàn: Chạy cục bộ thông qua Ollama, không cần kết nối internet sau khi tải model, không phát sinh chi phí API.
+🔍 Semantic Search (tìm kiếm ngữ nghĩa)
+🤖 Large Language Models (LLM)
+🧠 Vector Database
 
-Giao diện thân thiện: Phát triển trên nền tảng Streamlit với tính năng kéo thả tệp và hiển thị tiến trình xử lý trực quan.
+Khác với chatbot thông thường, SmartDoc AI chỉ trả lời dựa trên nội dung tài liệu, đảm bảo độ chính xác và tránh “ảo giác AI”.
 
-🛠 Kiến trúc hệ thống
-Dự án được thiết kế theo kiến trúc đa lớp đảm bảo tính module hóa:
+✨ Tính năng nổi bật
+🌐 Đa ngôn ngữ
+Hỗ trợ tiếng Việt, tiếng Anh và hơn 50+ ngôn ngữ
+Trích xuất nội dung PDF chính xác cao
+⚡ Hỏi đáp thời gian thực
+Sử dụng model Qwen2.5:7B
+Tối ưu cho tiếng Việt, trả lời rõ ràng, đúng trọng tâm
+🧠 Semantic Search
+Sử dụng:
+FAISS (Vector Database)
+MPNet Embedding
+Hiểu ngữ cảnh thay vì chỉ so khớp từ khóa
+🔒 Hoạt động Offline 100%
+Chạy local qua Ollama
+Không cần API → không tốn chi phí
+Dữ liệu không rời khỏi máy
+🖥 Giao diện thân thiện
+Xây dựng bằng Streamlit
+Kéo & thả file PDF
+Hiển thị tiến trình xử lý trực quan
+🏗 Kiến trúc hệ thống
 
-Presentation Layer: Streamlit (v1.41.1) - Xử lý giao diện người dùng.
+Hệ thống được thiết kế theo kiến trúc nhiều lớp:
 
-Application Layer: LangChain (v0.3.16) - Điều phối luồng dữ liệu RAG.
-
-Data Layer: * PDFPlumber: Trích xuất nội dung văn bản chất lượng cao.
-
-FAISS (v1.9.0): Lưu trữ và truy vấn vector.
-
-Model Layer: Ollama runtime vận hành model Qwen2.5:7b.
-
+┌──────────────────────────┐
+│ Presentation Layer       │ → Streamlit UI
+├──────────────────────────┤
+│ Application Layer        │ → LangChain (RAG Pipeline)
+├──────────────────────────┤
+│ Data Layer               │ → PDFPlumber + FAISS
+├──────────────────────────┤
+│ Model Layer              │ → Ollama (Qwen2.5:7B)
+└──────────────────────────┘
+🛠 Công nghệ sử dụng
+Thành phần	Công nghệ
+UI	Streamlit
+Backend	LangChain
+LLM	Qwen2.5:7B (Ollama)
+Vector DB	FAISS
+Embedding	MPNet
+PDF Processing	PDFPlumber
 📋 Yêu cầu hệ thống
-Hệ điều hành: Windows, macOS, hoặc Linux.
-
-Ngôn ngữ: Python 3.8 trở lên.
-
-Phần mềm hỗ trợ: Ollama runtime.
-
-RAM đề nghị: Tối thiểu 8GB (Khuyến khích 16GB để model chạy mượt mà).
-
-🔧 Cài đặt & Sử dụng
-1. Thiết lập môi trường
-# Clone repository
+💻 OS: Windows / macOS / Linux
+🐍 Python: >= 3.8
+🧠 RAM:
+Tối thiểu: 8GB
+Khuyến nghị: 16GB
+⚙️ Cài đặt Ollama
+⚙️ Cài đặt & chạy dự án
+1️⃣ Clone repository
 git clone https://github.com/BenSin33/SmartDoc_AI.git
 cd SmartDoc_AI
-
-# Tạo và kích hoạt môi trường ảo
+2️⃣ Tạo môi trường ảo
 python -m venv venv
 
-# Windows:
+Kích hoạt:
+
+Windows:
 venv\Scripts\activate
-# Linux/Mac:
+Linux / macOS:
 source venv/bin/activate
-
-# Cài đặt các thư viện cần thiết
+3️⃣ Cài dependencies
 pip install -r requirements.txt
+4️⃣ Cài đặt model (Ollama)
 
-2. Cài đặt Model (Ollama)
-Tải và cài đặt Ollama tại ollama.ai, sau đó thực hiện lệnh:
+Tải Ollama tại: https://ollama.ai
+
+Sau đó chạy:
+
 ollama pull qwen2.5:7b
-
-3. Chạy ứng dụng
+5️⃣ Chạy ứng dụng
 streamlit run app.py
-
 📂 Cấu trúc dự án
-├── app.py                # Điểm khởi chạy ứng dụng chính
-├── requirements.txt      # Danh sách các thư viện phụ thuộc
-├── data/                 # Thư mục chứa các tài liệu PDF mẫu
-├── documentation/        # Báo cáo dự án và tài liệu LaTeX
-└── venv/                 # Môi trường ảo Python
-
-💡 Lưu ý khi sử dụng
-Đặt câu hỏi cụ thể: Để có kết quả tốt nhất, hãy đưa ra câu hỏi rõ ràng dựa trên nội dung có trong tài liệu đã upload.
-
-Tự động nhận diện ngôn ngữ: Hệ thống sẽ tự động phản hồi bằng ngôn ngữ tương ứng với câu hỏi của bạn (Tiếng Việt hoặc Tiếng Anh).
-
-Xử lý sự cố: Nếu hệ thống không phản hồi, hãy kiểm tra chắc chắn rằng dịch vụ Ollama đang chạy ngầm trên máy tính của bạn.
+SmartDoc_AI/
+│
+├── app.py                # Entry point
+├── requirements.txt      # Dependencies
+├── data/                 # Sample PDF files
+├── documentation/        # Báo cáo & tài liệu LaTeX
+└── venv/                 # Virtual environment
+💡 Hướng dẫn sử dụng
+📌 Đặt câu hỏi cụ thể → kết quả chính xác hơn
+🌍 Tự động nhận diện ngôn ngữ (VI / EN)
+⚠️ Nếu không phản hồi:
+Kiểm tra Ollama đã chạy chưa
+🚀 Định hướng phát triển
+ Hỗ trợ nhiều định dạng (DOCX, TXT, HTML)
+ Multi-user system
+ Cloud deployment
+ Fine-tuned model riêng
+📄 License
 
 MIT License
 
-Copyright (c) 2026 Nhóm 15 môn học OSSD Trường Đại học Sài Gòn
+Copyright (c) 2026 Nhóm 15 - OSSD - Đại học Sài Gòn
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+Permission is hereby granted, free of charge...
