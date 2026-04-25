@@ -312,6 +312,12 @@ def clear_vector_store_dialog():
         st.session_state.chunks = None
         if "user_question" in st.session_state:
             st.session_state.user_question = ""
+        if "pdf_bytes_dict" in st.session_state:
+            st.session_state.pdf_bytes_dict = {}
+        if "selected_chunk" in st.session_state:
+            del st.session_state["selected_chunk"]
+        st.session_state.uploader_key_version = st.session_state.get("uploader_key_version", 0) + 1
+        st.rerun()
 
 # ------------------ SIDEBAR ------------------
 with st.sidebar:
@@ -620,6 +626,9 @@ if "rag_corag_metrics" not in st.session_state:
 if "model_selection" not in st.session_state:
     st.session_state.model_selection = "RAG"
 
+if "uploader_key_version" not in st.session_state:
+    st.session_state.uploader_key_version = 0
+
 # Thêm: Khởi tạo Memory lưu ngữ cảnh cho LangChain
 if "memory" not in st.session_state:
     st.session_state.memory = ConversationBufferMemory(
@@ -766,7 +775,8 @@ danh_sach_tai_len = st.file_uploader(
     "",
     type=["pdf", "docx"],
     accept_multiple_files=True, # Đã bật tính năng cho phép tải lên nhiều file
-    help="Hỗ trợ PDF và DOCX, có thể chọn nhiều file cùng lúc"
+    help="Hỗ trợ PDF và DOCX, có thể chọn nhiều file cùng lúc",
+    key=f"uploaded_documents_{st.session_state.uploader_key_version}"
 )
 
 # Khởi tạo dict lưu trữ byte của file PDF để hiển thị (nếu chưa có)
