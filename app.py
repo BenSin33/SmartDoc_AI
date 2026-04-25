@@ -1,25 +1,23 @@
-from langchain.retrievers import ContextualCompressionRetriever # thêm thư viện cho Re-ranking
-from langchain.retrievers.document_compressors import CrossEncoderReranker # thêm thư viện cho Re-ranking
+from langchain_classic.retrievers import ContextualCompressionRetriever
+from langchain_classic.retrievers.document_compressors import CrossEncoderReranker# thêm thư viện cho Re-ranking
 from langchain_community.cross_encoders import HuggingFaceCrossEncoder # thêm thư viện cho Re-ranking
 import datetime
 import time
 from langchain_community.retrievers import BM25Retriever
-from langchain.retrievers import EnsembleRetriever
+from langchain_classic.retrievers import EnsembleRetriever
 import logging
 import os
 import tempfile
 import streamlit as st
-import base64
 from langchain_community.document_loaders import PDFPlumberLoader, Docx2txtLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
-from langchain.chains import ConversationalRetrievalChain
-from langchain.memory import ConversationBufferMemory
+from langchain_classic.chains import ConversationalRetrievalChain
+from langchain_classic.memory import ConversationBufferMemory
 
 from langchain_community.llms import Ollama
-from langchain.chains import RetrievalQA
-from langchain.prompts import PromptTemplate
+from langchain_classic.prompts import PromptTemplate
 
 # cấu hình logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -640,6 +638,72 @@ def create_vector_store(chunks):
     vector_store = FAISS.from_documents(chunks, embeddings)
     return vector_store
 
+
+@st.cache_resource
+def get_cross_encoder_compressor():
+    cross_model = HuggingFaceCrossEncoder(model_name="cross-encoder/ms-marco-MiniLM-L-6-v2")
+    return CrossEncoderReranker(model=cross_model, top_n=3)
+
+
+def is_follow_up_question(question: str) -> bool:
+    lowered_question = question.lower().strip()
+    follow_up_markers = [
+        "phần đó",
+        "mục đó",
+        "đoạn đó",
+        "ý đó",
+        "nội dung của phần đó",
+        "phần này",
+        "mục này",
+        "đoạn này",
+        "ý này",
+        "ở trên",
+        "bên trên",
+        "tiếp theo",
+        "cái đó",
+        "điều đó",
+        "phần vừa nêu",
+        "mục vừa nêu"
+    ]
+    return any(marker in lowered_question for marker in follow_up_markers)
+
+
+def build_recent_chat_context(chat_history, max_turns: int = 2) -> str:
+    recent_turns = chat_history[-max_turns:]
+    context_lines = []
+    for idx, turn in enumerate(recent_turns, start=1):
+        context_lines.append(f"Lượt {idx} - Câu hỏi: {turn['question']}")
+        context_lines.append(f"Lượt {idx} - Trả lời: {turn['answer']}")
+    return "\n".join(context_lines)
+
+
+def rewrite_follow_up_question(llm, question: str, chat_history):
+    if not chat_history or not is_follow_up_question(question):
+        return question
+
+    recent_context = build_recent_chat_context(chat_history)
+    rewrite_prompt = f"""
+    Bạn có nhiệm vụ biến một câu hỏi follow-up thành câu hỏi độc lập, rõ nghĩa hơn để hệ thống truy xuất tài liệu chính xác hơn.
+
+    Lịch sử hội thoại gần nhất:
+    {recent_context}
+
+    Câu hỏi follow-up hiện tại:
+    {question}
+
+    Yêu cầu:
+    - Nếu câu hỏi hiện tại có từ tham chiếu như "phần đó", "mục đó", "ý trên", hãy thay bằng đối tượng cụ thể được nhắc gần nhất.
+    - Giữ nguyên ý định gốc của người dùng.
+    - Chỉ trả về câu hỏi đã viết lại.
+    - Nếu lịch sử không đủ rõ để suy ra đối tượng, trả lại nguyên câu hỏi.
+    """
+
+    try:
+        rewritten_question = llm.invoke(rewrite_prompt).strip()
+        return rewritten_question or question
+    except Exception:
+        return question
+
 # ===== CoRAG (CORRECTIVE RAG) =====
 class CoRAGRetriever:
     def __init__(self, base_retriever, llm):
@@ -785,6 +849,12 @@ if danh_sach_tai_len:
                         border-left: 4px solid #28a745;
                         margin: 10px 0;">
                         ✅ Vector store sẵn sàng! (Thời gian: {st.session_state.metrics['embedding_time']:.2f}s). Bạn có thể đặt câu hỏi bên dưới.
+                    </div>
+                    """, unsafe_allow_html=True)
+            else:
+                st.markdown("""
+                <div style="
+                    color: #212529;
                 padding: 12px;
                 border-radius: 8px;
                 border-left: 4px solid #dc3545;
@@ -871,8 +941,7 @@ if st.session_state.vector_store is not None:
     # Logic Re-ranking cho câu 9:
     if use_reranker:
         with st.spinner("Đang tải mô hình Cross-Encoder (Lần đầu sẽ tốn chút thời gian)..."):
-            cross_model = HuggingFaceCrossEncoder(model_name="cross-encoder/ms-marco-MiniLM-L-6-v2")
-            compressor = CrossEncoderReranker(model = cross_model, top_n=3) # chỉ lấy top 3 chunk tốt nhất sau khi re-rank
+            compressor = get_cross_encoder_compressor() # chỉ lấy top 3 chunk tốt nhất sau khi re-rank
 
             # Gói retriever hiện tại vào trong bộ nén (compressor) để tự động re-rank mỗi khi truy xuất
             #compressor : nhận vào một list các document trả về từ retriever, 
@@ -950,7 +1019,14 @@ if st.session_state.vector_store is not None:
 
         if submitted and user_question:
 
-            final_question= user_question
+            final_question = rewrite_follow_up_question(
+                llm,
+                user_question,
+                st.session_state.chat_history
+            )
+
+            if final_question != user_question:
+                st.info(f"**Câu hỏi follow-up đã được làm rõ:** {final_question}")
 
             if use_self_rag:
                 with st.spinner("Self-RAG đang phân tích và tối ưu hoá câu hỏi (Query rewriting)..."):
