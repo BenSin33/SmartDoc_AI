@@ -1,5 +1,6 @@
 streamlit==1.41.1
-langchain==0.3.16
+#langchain==0.3.16
+langchain-classic
 langchain-community==0.3.16
 faiss-cpu
 pdfplumber
