@@ -175,6 +175,7 @@ with st.sidebar:
                 retriever = vector_engine.load_local_index()
                 if retriever:
                     st.session_state.vector_store = vector_engine.vector_store
+                    st.session_state.chunks = vector_engine.chunks
                     st.success("Đã tải index thành công!")
                 else: st.error("Không tìm thấy index đã lưu.")
 
@@ -227,7 +228,14 @@ if st.session_state.vector_store is not None:
     st.session_state.model_selection = model_mode
     search_mode = st.radio("Chọn chế độ truy xuất:", ["Hybrid (Vector + từ khoá)", "Chỉ Vector Search (Pure Semantic)"], horizontal=True)
 
-    danh_sach_file = list(set([chunk.metadata.get("source_file") for chunk in st.session_state.chunks if chunk.metadata.get("source_file")]))
+    if st.session_state.chunks:
+        danh_sach_file = list(set([
+            chunk.metadata.get("source_file") 
+            for chunk in st.session_state.chunks 
+            if chunk.metadata.get("source_file")
+        ]))
+    else:
+        danh_sach_file = []
     file_can_loc = st.selectbox("Lọc tìm kiếm theo tài liệu:", ["Toàn bộ tài liệu"] + danh_sach_file)
 
     st.markdown("<b style='color: #212529;'>Tính năng nâng cao:</b>", unsafe_allow_html=True)
@@ -242,11 +250,19 @@ if st.session_state.vector_store is not None:
     faiss_retriever = st.session_state.vector_store.as_retriever(search_kwargs=faiss_kwargs)
     
     # Khởi tạo BM25 cho Hybrid
-    bm25_retriever = BM25Retriever.from_documents(st.session_state.chunks)
-    bm25_retriever.k = 5
-    hybrid_retriever = EnsembleRetriever(retrievers=[bm25_retriever, faiss_retriever], weights=[0.3, 0.7])
-
-    active_retriever = hybrid_retriever if search_mode == "Hybrid (Vector + từ khoá)" else faiss_retriever
+    if st.session_state.chunks:
+        bm25_retriever = BM25Retriever.from_documents(st.session_state.chunks)
+        bm25_retriever.k = 5
+    else:
+        bm25_retriever = None
+    if bm25_retriever:
+        hybrid_retriever = EnsembleRetriever(
+            retrievers=[bm25_retriever, faiss_retriever],
+            weights=[0.3, 0.7]
+        )
+        active_retriever = hybrid_retriever if search_mode == "Hybrid (Vector + từ khoá)" else faiss_retriever
+    else:
+        active_retriever = faiss_retriever
 
     if use_reranker:
         compressor = get_cross_encoder_compressor()
