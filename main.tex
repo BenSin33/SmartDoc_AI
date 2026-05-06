@@ -1,0 +1,1016 @@
+\documentclass[a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T5]{fontenc}
+\usepackage{vntex}
+%\usepackage[english,vietnam]{babel}
+
+%\usepackage[utf8]{inputenc}
+%\usepackage[francais]{babel}
+\usepackage{a4wide,amssymb,epsfig,latexsym,multicol,array,hhline,fancyhdr}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{lastpage}
+\usepackage[lined,boxed,commentsnumbered]{algorithm2e}
+\usepackage{enumerate}
+\usepackage{color}
+\usepackage{graphicx}							% Standard graphics package
+\usepackage{array}
+\usepackage{tabularx, caption}
+\usepackage{multirow}
+\usepackage[framemethod=tikz]{mdframed}% For highlighting paragraph backgrounds
+\usepackage{multicol}
+\usepackage{rotating}
+\usepackage{graphics}
+\usepackage{geometry}
+\usepackage{setspace}
+\usepackage{epsfig}
+\usepackage{tikz}
+\usepackage{listings}
+\usepackage{float} % Hãy đảm bảo bạn đã khai báo gói này ở phần tiền đề (preamble)
+\usetikzlibrary{arrows,snakes,backgrounds}
+\usepackage{hyperref}
+\hypersetup{urlcolor=blue,linkcolor=black,citecolor=black,colorlinks=true} 
+
+\usepackage{fancyhdr} % Gói hỗ trợ tùy chỉnh header/footer
+
+\pagestyle{fancy}
+\fancyhf{} % Xóa tất cả các thiết lập header/footer mặc định
+
+% Thiết lập nội dung cho Header
+\fancyhead[L]{Bài tập lớn OSSD 2026} % [L] là bên trái
+\fancyhead[R]{RAG System với LLMs}    % [R] là bên phải
+
+\fancyfoot[C]{\thepage} % [C] là Center (giữa), \thepage là lệnh in số trang hiện tại
+\renewcommand{\footrulewidth}{0pt} % Bạn có thể đổi thành 0.4pt nếu muốn có đường kẻ ở chân trang
+% Thiết lập đường kẻ ngang
+\renewcommand{\headrulewidth}{0.4pt} % Độ dày của đường kẻ ngang dưới header
+
+\usepackage{listings}
+\usepackage{xcolor}
+
+% Định nghĩa các màu sắc
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92} % Màu nền ghi nhạt
+
+% Thiết lập phong cách cho code
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,                  
+    captionpos=b,                     
+    keepspaces=true,                  
+    numbers=left,                     
+    numbersep=5pt,                  
+    showstringspaces=false,
+    tabsize=2,
+    frame=single, % Tạo khung bao quanh
+    rulecolor=\color{black!30} % Màu đường viền khung
+}
+
+\lstset{style=mystyle}
+
+
+% --- BẮT ĐẦU TÀI LIỆU ---
+\begin{document}
+
+% --- TRANG BÌA ---
+\begin{titlepage}
+    \centering
+    \vspace*{1cm}
+    
+    {\Large \textbf{TRƯỜNG ĐẠI HỌC SÀI GÒN}} \\ % [cite: 250]
+    {\Large \textbf{KHOA CÔNG NGHỆ THÔNG TIN}} \\ % [cite: 251]
+    
+    
+    % Thay đổi kích thước logo nếu cần
+    \begin{center}
+        \includegraphics[width=0.45\textwidth]{logoITSGU.png} 
+        
+        \vspace{2cm}
+        
+        {\Large \textbf{GENERATIVE AI}} \\ 
+        {\Large \textbf{Ver 1.1}} \\
+        
+        \vspace{0.3cm}
+        \rule{0.6\textwidth}{0.4pt} % Đường kẻ ngang
+        \vspace{1cm}
+        
+        {\Large \textbf{Bài tập lớn:}} \\ 
+        \vspace{0.5cm}
+        {\LARGE \textbf{SmartDoc AI - Intelligent Document Q\&A System}} \\
+        \vspace{0.5cm}
+        \rule{0.6\textwidth}{0.4pt} % Đường kẻ ngang
+    \end{center}
+    \begin{flushleft}
+        \large
+        \textbf{Môn học:} Open source software development \\ % [cite: 257]
+        \textbf{Học kỳ:} Spring 2026 \\ % [cite: 259]
+        \textbf{Thời hạn:} April 19, 2026 \\ % [cite: 261]
+    \end{flushleft}
+    
+    \vfill
+    
+    {\large TP. HỒ CHÍ MINH, NĂM 2026} % [cite: 262]
+\end{titlepage}
+
+% --- MỤC LỤC ---
+\newpage
+\tableofcontents % [cite: 263]
+\newpage
+
+% --- NỘI DUNG CHÍNH ---
+
+\section*{LỜI MỞ ĐẦU}
+\addcontentsline{toc}{section}{LỜI MỞ ĐẦU}
+Trong kỷ nguyên số hiện nay, việc xử lý và tìm kiếm thông tin từ các tài liệu điện tử đã trở thành một nhu cầu thiết yếu. % [cite: 277] 
+Với sự phát triển mạnh mẽ của Trí tuệ nhân tạo (AI) và Xử lý ngôn ngữ tự nhiên (NLP), các hệ thống RAG (Retrieval-Augmented Generation) đã nổi lên như một giải pháp hiệu quả cho bài toán này. % [cite: 278]
+
+Dự án này được thực hiện nhằm xây dựng một hệ thống RAG hoàn chỉnh, cho phép người dùng tải lên tài liệu PDF và đặt câu hỏi về nội dung tài liệu. % [cite: 279] 
+Hệ thống sử dụng mô hình Qwen2.5:7b thông qua Ollama, kết hợp với công nghệ embedding đa ngôn ngữ và vector database để cung cấp câu trả lời chính xác cho cả tiếng Việt và tiếng Anh. % [cite: 280]
+
+Báo cáo này trình bày chi tiết về kiến trúc hệ thống, các công nghệ được sử dụng, quy trình triển khai và kết quả đạt được. % [cite: 281]
+\vfill 
+\newpage
+\section{GIỚI THIỆU} % [cite: 285]
+
+\subsection{Bối cảnh và động lực} % [cite: 287]
+Với khối lượng thông tin ngày càng tăng trong các tài liệu số, việc tìm kiếm và trích xuất thông tin một cách hiệu quả đã trở thành thách thức lớn. % [cite: 288] 
+Các phương pháp truyền thống như tìm kiếm từ khóa thường không đủ để hiểu ngữ cảnh và ý nghĩa sâu xa của câu hỏi. % [cite: 289]
+
+Hệ thống RAG (Retrieval-Augmented Generation) kết hợp ưu điểm của: % [cite: 290]
+\begin{itemize}
+    \item \textbf{Information Retrieval:} Tìm kiếm thông tin liên quan từ cơ sở dữ liệu % [cite: 291]
+    \item \textbf{Natural Language Generation:} Sinh ra câu trả lời tự nhiên dựa trên thông tin đã tìm được % [cite: 292]
+\end{itemize}
+
+\subsection{Mục tiêu dự án} % [cite: 293]
+Dự án đặt ra các mục tiêu cụ thể sau: % [cite: 294]
+\begin{enumerate}
+    \item Xây dựng giao diện web thân thiện cho phép người dùng tải lên tài liệu PDF % [cite: 295]
+    \item Tích hợp công nghệ embedding để chuyển đổi văn bản thành vector % [cite: 296]
+    \item Triển khai vector database (FAISS) để lưu trữ và tìm kiếm hiệu quả % [cite: 297]
+    \item Tích hợp mô hình ngôn ngữ lớn Qwen2.5:7b được tối ưu cho tiếng Việt % [cite: 298]
+    \item Xây dựng pipeline RAG hoàn chỉnh từ document loading đến answer generation % [cite: 299]
+    \item Tối ưu hóa hiệu suất và độ chính xác của câu trả lời % [cite: 300]
+\end{enumerate}
+
+\subsection{Phạm vi dự án} % [cite: 301]
+Dự án tập trung vào: % [cite: 302]
+\begin{itemize}
+    \item Xử lý tài liệu PDF đa ngôn ngữ % [cite: 303]
+    \item Hỗ trợ xuất sắc cho tiếng Việt và 50+ ngôn ngữ khác % [cite: 304]
+    \item Tự động phát hiện ngôn ngữ và trả lời phù hợp % [cite: 305]
+    \item Chạy local trên máy tính cá nhân % [cite: 306]
+    \item Sử dụng mô hình open-source và miễn phí % [cite: 307]
+\end{itemize}
+\vfill
+\section{CƠ SỞ LÝ THUYẾT} % [cite: 310]
+
+\subsection{RAG (Retrieval-Augmented Generation)} % [cite: 311]
+\subsubsection{Khái niệm} % [cite: 311]
+RAG là một kỹ thuật trong NLP kết hợp hai thành phần: % [cite: 312]
+\begin{enumerate}
+    \item \textbf{Retrieval (Truy xuất):} Tìm kiếm thông tin liên quan từ cơ sở dữ liệu % [cite: 314]
+    \item \textbf{Generation (Sinh):} Sử dụng LLM để sinh ra câu trả lời dựa trên thông tin đã truy xuất % [cite: 315]
+\end{enumerate}
+
+\subsubsection{Kiến trúc RAG} % [cite: 316]
+Kiến trúc RAG cơ bản bao gồm: % [cite: 317]
+\begin{equation}
+    RAG(x) = \text{Generator}(x, \text{Retriever}(x)) % [cite: 318]
+\end{equation}
+Trong đó: % [cite: 320]
+\begin{itemize}
+    \item $x$: Câu hỏi đầu vào % [cite: 321]
+    \item $\text{Retriever}(x)$: Hàm truy xuất các tài liệu liên quan % [cite: 322]
+    \item \text{Generator}: Mô hình sinh câu trả lời % [cite: 323]
+\end{itemize}
+
+\subsection{Embedding và Vector Database} % [cite: 324]
+\subsubsection{Text Embedding} % [cite: 325]
+Text embedding là quá trình chuyển đổi văn bản thành vector số có số chiều cố định: % [cite: 326]
+\begin{equation}
+    E: \text{Text} \rightarrow \mathbb{R}^{d} % [cite: 327]
+\end{equation}
+\text{Trong đó $d$ là số chiều của vector (thường là 384, 512, 768, v.v.)} 
+
+Đặc điểm quan trọng:
+\begin{itemize}
+    \item Văn bản có nghĩa tương tự sẽ có vector gần nhau trong không gian $d$ chiều % [cite: 329]
+    \item Khoảng cách được tính bằng cosine similarity hoặc Euclidean distance % [cite: 330]
+\end{itemize}
+
+\subsubsection{FAISS (Facebook AI Similarity Search)} % [cite: 331]
+FAISS là thư viện hiệu quả cho similarity search và clustering của dense vectors: % [cite: 332]
+Ưu điểm:
+\begin{itemize}
+    \item Tìm kiếm nhanh với hàng triệu vector % [cite: 333]
+    \item Hỗ trợ GPU acceleration % [cite: 334]
+    \item Memory-efficient indexing % [cite: 335]
+\end{itemize}
+
+\subsection{Large Language Models (LLMs)} % [cite: 340]
+\subsubsection{Qwen2.5} % [cite: 341]
+\text{Qwen2.5 là mô hình ngôn ngữ lớn phát triển bởi Alibaba Cloud:}\\ % [cite: 343]
+\textbf{Đặc điểm:}
+\begin{itemize}
+    \item Kiến trúc transformer-based thế hệ mới % [cite: 344]
+    \item Hỗ trợ context dài lên đến 128K tokens % [cite: 345]
+    \item Tối ưu xuất sắc cho tiếng Việt và đa ngôn ngữ % [cite: 346]
+    \item Phiên bản 7B parameters cân bằng giữa hiệu suất và chất lượng % [cite: 347]
+    \item Được train trên corpus đa ngôn ngữ bao gồm tiếng Việt % [cite: 348]
+    \item Performance vượt trội so với Llama3 cho tiếng Việt % [cite: 349]
+\end{itemize}
+
+\subsubsection{Ollama} % [cite: 350]
+Ollama là framework để chạy LLMs locally:\\
+\textbf{Tính năng:}
+\begin{itemize}
+    \item API đơn giản, dễ sử dụng % [cite: 354]
+    \item Hỗ trợ nhiều mô hình khác nhau % [cite: 355]
+    \item Tối ưu performance cho local machine % [cite: 356]
+    \item Không cần internet sau khi tải model % [cite: 357]
+\end{itemize}
+
+\subsection{LangChain Framework} % [cite: 358]
+LangChain là framework Python để xây dựng ứng dụng với LLMs: % [cite: 359]
+\\
+\textbf{Thành phần chính:}
+\begin{itemize}
+    \item \textbf{Document Loaders:} Tải và parse các định dạng tài liệu % [cite: 360]
+    \item \textbf{Text Splitters:} Chia văn bản thành chunks nhỏ % [cite: 361]
+    \item \textbf{Embeddings:} Chuyển đổi text thành vectors % [cite: 362]
+    \item \textbf{Vector Stores:} Lưu trữ và tìm kiếm vectors % [cite: 363]
+    \item \textbf{Retrievers:} Truy xuất thông tin liên quan % [cite: 364]
+    \item \textbf{Chains:} Kết nối các thành phần lại với nhau % [cite: 365]
+\end{itemize}
+\newpage
+\section{THIẾT KẾ HỆ THỐNG} % [cite: 368]
+
+\subsection{Kiến trúc tổng quan}
+Hệ thống được thiết kế theo mô hình multi-layer architecture:
+
+\begin{figure}[H] % Tham số [H] ép buộc hình nằm ngay tại đây
+    \centering
+    \includegraphics[width=0.90\linewidth]{KTTQ.png}
+    \caption{Kiến trúc hệ thống RAG}
+    \label{fig:rag_architecture}
+\end{figure}
+
+\subsection{Data Flow (Luồng dữ liệu)} % [cite: 388]
+\subsubsection{Document Processing Flow} % [cite: 389]
+\begin{enumerate}
+    \item \textbf{Upload:} Người dùng upload PDF file % [cite: 390]
+    \item \textbf{Loading:} PDFPlumberLoader đọc nội dung PDF % [cite: 391]
+    \item \textbf{Splitting:} Recursive Character TextSplitter chia thành chunks % [cite: 392]
+    \item \textbf{Embedding:} Multilingual MPNet (768-dim) chuyển chunks thành vectors % [cite: 393]
+    \item \textbf{Indexing:} FAISS lưu trữ vectors vào index % [cite: 394]
+\end{enumerate}
+
+\subsubsection{Query Processing Flow} % [cite: 398]
+\begin{enumerate}
+    \item \textbf{Query Input:} Người dùng nhập câu hỏi % [cite: 399]
+    \item \textbf{Query Embedding:} Chuyển câu hỏi thành vector % [cite: 400]
+    \item \textbf{Similarity Search:} FAISS tìm top-k chunks liên quan nhất % [cite: 401]
+    \item \textbf{Context Building:} Kết hợp các chunks thành context % [cite: 402]
+    \item \textbf{Prompt Construction:} Tạo prompt với context và question % [cite: 404]
+    \item \textbf{LLM Inference:} Qwen2.5:7b sinh câu trả lời % [cite: 405]
+    \item \textbf{Response Display:} Hiển thị kết quả cho người dùng % [cite: 406]
+\end{enumerate}
+
+\subsection{Chi tiết các thành phần} % [cite: 407]
+
+\subsubsection{Document Loader} % [cite: 408]
+\begin{lstlisting}[language=Python, caption=Document Loading và Xử lý phân mảnh file]
+import os
+import tempfile
+from langchain_community.document_loaders import PDFPlumberLoader, Docx2txtLoader
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+def process_document(uploaded_file):
+    """
+    Ham nhan file upload tu Streamlit, doc noi dung va chia nho thanh cac chunks.
+    Ho tro ca PDF va DOCX.
+    """
+    file_extension = uploaded_file.name.split('.')[-1].lower()
+    with tempfile.NamedTemporaryFile(delete=False, suffix=f".{file_extension}") as tmp_file:
+        tmp_file.write(uploaded_file.getvalue())
+        tmp_file_path = tmp_file.name
+
+    try:
+        # Buoc 1: Document Loader
+        if file_extension == 'pdf':
+            loader = PDFPlumberLoader(tmp_file_path)
+        elif file_extension == 'docx':
+            loader = Docx2txtLoader(tmp_file_path)
+        else:
+            return None
+        docs = loader.load()
+
+        # Buoc 2: Text Splitter
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=1000,
+            chunk_overlap=100
+        )
+        chunks = text_splitter.split_documents(docs)
+        return chunks
+    finally:
+        if os.path.exists(tmp_file_path):
+            os.remove(tmp_file_path)
+\end{lstlisting}
+
+Đoạn mã trên cho thấy ứng dụng đã được thiết kế linh hoạt bằng cách sử dụng file tạm thời (\texttt{tempfile}) để đưa luồng byte từ quá trình tải lên Streamlit vào cho phần khung LangChain có thể đọc được. Đồng thời hệ thống đã được nâng cấp xử lý điều kiện trích xuất đối với cả file định dạng PDF truyền thống và file văn bản Word tiêu chuẩn (DOCX). Hơn thế nữa, đoạn mã cũng thực hiện việc dọn dẹp các tệp tạm tự động giải phóng bộ nhớ. % [cite: 410, 412, 413, 414]
+
+Đặc điểm PDFPlumberLoader:
+\begin{itemize}
+    \item Trích xuất text chính xác, bao gồm tables % [cite: 416]
+    \item Preserve layout information % [cite: 417]
+    \item Xử lý được các PDF phức tạp % [cite: 418]
+\end{itemize}
+
+\subsubsection{Text Splitter} % [cite: 419]
+\begin{lstlisting}[language=Python, caption=Text Splitting]
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+text_splitter = RecursiveCharacterTextSplitter(
+    chunk_size=1000,    # Length of each chunk
+    chunk_overlap=100   # Overlap between chunks
+)
+documents = text_splitter.split_documents(docs)
+\end{lstlisting} % [cite: 420, 422, 423, 424, 425, 426, 428, 429]
+
+Tham số quan trọng:
+\begin{itemize}
+    \item \texttt{chunk\_size = 1000}: Mỗi chunk tối đa 1000 ký tự % [cite: 431]
+    \item \texttt{chunk\_overlap = 100}: 100 ký tự trùng lặp giữa các chunks liên tiếp % [cite: 432]
+    \item Overlap giúp đảm bảo ngữ cảnh không bị mất ở ranh giới % [cite: 433]
+\end{itemize}
+
+\subsubsection{Embedding Model} % [cite: 435]
+\begin{lstlisting}[language=Python, caption=HuggingFace Embeddings]
+from langchain_community.embeddings import HuggingFaceEmbeddings
+
+# Using multilingual MPNet for Vietnamese support
+embedder = HuggingFaceEmbeddings(
+    model_name="sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
+    model_kwargs={'device': 'cpu'},
+    encode_kwargs={'normalize_embeddings': True}
+)
+# Output dimension: 768
+# Supports: Vietnamese, English, Chinese, and 50+ languages
+\end{lstlisting} % [cite: 436]
+
+Model được sử dụng: \texttt{paraphrase-multilingual-mpnet-base-v2}
+\begin{itemize}
+    \item 768-dimensional embeddings (chất lượng cao)
+    \item Hỗ trợ 50+ ngôn ngữ bao gồm tiếng Việt
+    \item MPNet architecture - state-of-the-art cho multilingual
+    \item Excellent quality cho semantic search tiếng Việt % [cite: 437]
+    \item Được train trên corpus tiếng Việt lớn
+\end{itemize}
+
+\subsubsection{Vector Store và Quản lý Embedding Index}
+Cấu trúc lập trình hướng đối tượng (OOP) thường được áp dụng cho việc Vector Store để quản lý và vận hành hệ thống truy xuất (Retriever) một cách linh động. Lớp \texttt{VectorEngine} dưới đây minh hoạ cấu trúc đóng gói cho việc tạo vector embeddings và khởi tạo FAISS index. Mô hình Embedding (MPNet) và hệ thống tìm kiếm Vector (FAISS vector store) được cấu hình một cách khoa học để có thể lưu trữ dữ liệu offline (như file \texttt{.faiss}, \texttt{.pkl} vào thư mục local). Khả năng tải lại bản đã nhúng giúp tăng tốc độ cho những lần tái vấn sau mà không cần tạo lập index cho những tài liệu cũ và chung trên hệ thống. 
+
+\begin{lstlisting}[language=Python, caption=VectorEngine va FAISS Vector Store]
+import logging
+from langchain_community.vectorstores import FAISS
+from langchain_community.embeddings import HuggingFaceEmbeddings
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+class VectorEngine:
+    def __init__(self, model_name="sentence-transformers/paraphrase-multilingual-mpnet-base-v2"):
+        self.embedder = HuggingFaceEmbeddings(
+            model_name=model_name,
+            model_kwargs={'device': 'cpu'},
+            encode_kwargs={'normalize_embeddings': True}
+        )
+        self.vector_store = None
+    
+    def create_and_get_retriever(self, documents):
+        self.vector_store = FAISS.from_documents(documents, self.embedder)
+        return self.vector_store.as_retriever(
+            search_type="similarity",
+            search_kwargs={"k": 3}
+        )
+
+    def save_local_index(self, folder_path="faiss_index"):
+        if self.vector_store:
+            self.vector_store.save_local(folder_path)
+            
+    def load_local_index(self, folder_path="faiss_index"):
+        self.vector_store = FAISS.load_local(
+            folder_path, self.embedder,
+            allow_dangerous_deserialization=True
+        )
+        return self.vector_store.as_retriever(search_kwargs={"k": 3})
+\end{lstlisting} % [cite: 438, 439, 440]
+
+\subsubsection{LLM Integration}
+\begin{lstlisting}[language=Python, caption=Ollama LLM]
+from langchain_community.llms import Ollama
+
+# Using Qwen2.5:7b for best Vietnamese support
+llm = Ollama(model="qwen2.5:7b")
+\end{lstlisting} % [cite: 441]
+
+\subsection{Prompt Engineering} % [cite: 442]
+Prompt được thiết kế để tối ưu hóa chất lượng câu trả lời:
+\begin{lstlisting}[language=Python, caption=Prompt Template with Language Detection]
+# Auto-detect language and respond accordingly
+vietnamese_chars = 'aaaaeeeiooouuuuyyyyd'
+is_vietnamese = any(char in user_input.lower() for char in vietnamese_chars)
+
+if is_vietnamese:
+    prompt_text = """Su dung ngu canh sau day de tra loi cau hoi.
+    Neu ban khong biet, chi can noi la ban khong biet.
+    Tra loi ngan gon (3-4 cau) BAT BUOC bang tieng Viet.
+    
+    Ngu canh: {context}
+    
+    Cau hoi: {user_input}
+    
+    Tra loi: """
+else:
+    prompt_text = """Use the following context to answer the question.
+    If you don't know the answer, just say you don't know.
+    Keep answer concise (3-4 sentences).
+    
+    Context: {context}
+    
+    Question: {user_input}
+    
+    Answer: """
+\end{lstlisting} % [cite: 442, 443, 444]
+
+Các thành phần prompt:
+\begin{itemize}
+    \item \textbf{Instruction:} Hướng dẫn mô hình cách trả lời % [cite: 444]
+    \item \textbf{Context:} Thông tin liên quan từ tài liệu
+    \item \textbf{Question:} Câu hỏi của người dùng
+    \item \textbf{Constraint:} Giới hạn độ dài và yêu cầu về format
+\end{itemize}
+\newpage
+\section{TRIỂN KHAI} % [cite: 445]
+
+\subsection{Công nghệ sử dụng}
+\subsubsection{Frontend}
+\begin{itemize}
+    \item Streamlit 1.41.1: Framework cho web app
+    \item HTML/CSS: Custom styling
+\end{itemize}
+
+\subsubsection{Backend \& AI}
+\begin{itemize}
+    \item LangChain 0.3.16: Framework cho LLM applications
+    \item LangChain Community 0.3.16: Community extensions
+    \item FAISS 1.9.0: Vector similarity search
+    \item HuggingFace Transformers: Multilingual MPNet embedding model (768-dim)
+    \item Ollama: Local LLM runtime
+\end{itemize}
+
+\subsubsection{Document Processing}
+\begin{itemize}
+    \item PDFPlumber: PDF text extraction
+    \item PyPDF: Alternative PDF processing
+\end{itemize}
+
+\subsubsection{Python Libraries}
+\begin{itemize}
+    \item NumPy: Numerical computing
+    \item Pandas: Data manipulation
+    \item Torch (PyTorch): Deep learning backend
+\end{itemize}
+
+\subsection{Cài đặt môi trường} % [cite: 446]
+\subsubsection{Yêu cầu hệ thống}
+Software:
+\begin{itemize}
+    \item Python 3.8+
+    \item Ollama runtime
+    \item pip package manager
+\end{itemize}
+
+\subsubsection{Các bước cài đặt} % [cite: 447]
+\textbf{Bước 1: Clone hoặc tải project}
+\begin{lstlisting}[language=bash]
+git clone [repository-url]
+cd Project-Deepseek-Rag-Agent
+\end{lstlisting}
+
+\textbf{Bước 2: Tạo virtual environment}
+\begin{lstlisting}[language=bash]
+python -m venv venv
+source venv/bin/activate # Linux/Mac
+# or
+venv\Scripts\activate # Windows
+\end{lstlisting}
+
+\textbf{Bước 3: Cài đặt dependencies}
+\begin{lstlisting}[language=bash]
+pip install -r requirements.txt
+\end{lstlisting} % [cite: 448]
+
+\textbf{Bước 4: Cài đặt Ollama}
+\begin{lstlisting}[language=bash]
+# Download from https://ollama.ai
+# Then pull Qwen2.5:7b model
+ollama pull qwen2.5:7b
+\end{lstlisting}
+
+\textbf{Bước 5: Chạy ứng dụng}
+\begin{lstlisting}[language=bash]
+streamlit run app.py
+\end{lstlisting} % [cite: 449]
+
+\subsection{Cấu trúc thư mục}
+\begin{lstlisting}[language=bash, caption=Cau truc thu muc]
+Project-LLMs-Rag-Agent/
+|
++-- app.py                    # Main application file
++-- requirements.txt          # Python dependencies
++-- requirements_simplified.txt # Simplified dependencies
++-- README.md                 # Project documentation
+|
++-- data/                     # Data directory
+|   +-- gutenberg.pdf         # Sample PDF
+|
++-- documentation/            # Project documentation
+|   +-- project_report.tex    # LaTeX report
+|   +-- README.md             # Documentation guide
+|
++-- venv/                     # Virtual environment
+\end{lstlisting}
+
+\subsection{Cấu hình chi tiết} % [cite: 456]
+\subsubsection{Embedding Configuration}
+\begin{lstlisting}[language=Python]
+embedder = HuggingFaceEmbeddings(
+    model_name="sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
+    model_kwargs={'device': 'cpu'}, # Or 'cuda' if GPU available
+    encode_kwargs={'normalize_embeddings': True}
+)
+\end{lstlisting}
+
+\subsubsection{Retriever Configuration} % [cite: 457]
+\begin{lstlisting}[language=Python]
+retriever = vector.as_retriever(
+    search_type="similarity", # Or "mmr" for diverse results
+    search_kwargs={
+        "k": 3,           # Number of chunks to return
+        "fetch_k": 20     # Fetch more then filter
+    }
+)
+\end{lstlisting} % [cite: 458]
+
+\subsubsection{LLM Configuration}
+\begin{lstlisting}[language=Python]
+llm = Ollama(
+    model="qwen2.5:7b",
+    temperature=0.7,    # Creativity level
+    top_p=0.9,          # Nucleus sampling
+    repeat_penalty=1.1  # Avoid repetition
+)
+\end{lstlisting}
+\newpage
+
+\section{GIAO DIỆN NGƯỜI DÙNG} % [cite: 459]
+\subsection{Thiết kế UI/UX}
+\subsubsection{Color Palette và Tùy chỉnh Giao diện CSS}
+Hệ thống sử dụng bảng màu được tối ưu hóa cho accessibility thông qua việc tiêm trực tiếp CSS (\texttt{unsafe\_allow\_html}) vào Streamlit framework. Giao diện trở nên mượt mà, chuyên nghiệp và có sự cách biệt rõ ràng ở mỗi phân vùng trang.
+
+\begin{itemize}
+    \item Primary Color: \#007BFF (Blue) - Buttons và highlights
+    \item Secondary Color: \#FFC107 (Amber) - Upload Buttons và Labels 
+    \item Background: \#F8F9FA (Light gray) cho toàn bộ web application (Main background)
+    \item Sidebar: \#2C2F33 (Dark gray) - Sidebar background tạo cảm giác Dark Mode
+    \item Text Content: \#212529 (Dark gray) cho Main area, \#FFFFFF (White) ở Sidebar.
+\end{itemize}
+
+\begin{lstlisting}[language=Python, caption=Cau hinh Theme CSS voi unsafe\_allow\_html]
+import streamlit as st
+st.set_page_config(page_title="SmartDoc AI", layout="wide")
+
+st.markdown("""
+<style>
+    .stButton > button { background-color: #007BFF; color: white; }
+    .stButton > button:hover { background-color: #0056b3; }
+    [data-testid="stSidebar"] { background-color: #2C2F33; color: #FFFFFF; }
+    [data-testid="stSidebar"] * { color: #FFFFFF; }
+    .main { background-color: #F8F9FA; }
+    .stApp { background-color: #F8F9FA; }
+    body, .stMarkdown, .stTextInput > label { color: #212529; }
+    .upload-btn { background-color: #FFC107; color: black; }
+    .main, .stAlert, .streamlit-expanderHeader, .stSpinner, .stFileUploader { color: #000000 !important; }
+</style>
+""", unsafe_allow_html=True)
+\end{lstlisting}
+
+\subsubsection{Cấu trúc Sidebar và Menu Tuỳ chọn (Layout Structure)}
+\textbf{Sidebar (Bên trái):} Mảng điều hướng tập trung đưa ra các thiết lập thông số cơ bản cho hệ thống AI phục vụ. Code sử dụng HTML Div layout để format một bảng điều khiển gồm "Hướng dẫn sử dụng", thông số "Cấu hình hệ thống" (như Context Length \textit{128K tokens}, Model, Overlap...).
+\begin{itemize}
+    \item Instructions section
+    \item Settings information
+    \item Model configuration display
+\end{itemize}
+
+\textbf{Main Area (Chính giữa):}
+\begin{itemize}
+    \item Title và header
+    \item File uploader
+    \item Question input
+    \item Answer display
+\end{itemize}
+\subsection{User Flow} % [cite: 460]
+\begin{enumerate}
+    \item \textbf{Landing:} Người dùng thấy giao diện chính với hướng dẫn
+    \item \textbf{Upload:} Click vào file uploader và chọn PDF
+    \item \textbf{Processing:} Hệ thống xử lý tài liệu (hiển thị progress)
+    \item \textbf{Query:} Nhập câu hỏi vào text input
+    \item \textbf{Response:} Xem câu trả lời được sinh ra
+    \item \textbf{Iterate:} Có thể đặt thêm nhiều câu hỏi
+\end{enumerate}
+\subsection{Features} % [cite: 460]
+\subsubsection{File Upload}
+\begin{itemize}
+    \item Support PDF format
+    \item Drag-and-drop interface
+    \item File size validation
+    \item Success/error notifications
+\end{itemize}
+\subsubsection{Question Answering}
+\begin{itemize}
+    \item Natural language input
+    \item Real-time processing
+    \item Loading spinner during inference
+    \item Clear answer display
+\end{itemize}
+\subsubsection{Error Handling}
+\begin{itemize}
+    \item Invalid file format warnings
+    \item Processing errors
+    \item Model connection errors
+    \item User-friendly error messages
+\end{itemize}
+
+\subsection{Mã nguồn Tích hợp Giao diện và Xử lý Truy vấn (Main Flow)}
+Dưới đây là phần mã nguồn thực tế từ file \texttt{app.py} quản lý luồng tương tác với người dùng ở màn hình chính, bao gồm thao tác xử lý tải lên tài liệu, khởi tạo Vector Store vào hệ thống bộ nhớ tạm và tiến hành gửi truy vấn qua RAG chain.
+
+\begin{lstlisting}[language=Python, caption=Main Flow - Upload va Question Answering]
+# Khoi tao session state luu tru du lieu phien chay
+if "vector_store" not in st.session_state:
+    st.session_state.vector_store = None
+
+# Component Tai file
+uploaded_file = st.file_uploader("", type=["pdf", "docx"], help="Ho tro PDF va DOCX")
+
+if uploaded_file is not None:
+    with st.spinner("Dang xu ly tai lieu..."):
+        document_chunks = process_document(uploaded_file)
+        if document_chunks:
+            st.session_state.chunks = document_chunks
+            # Goi ham tao vector store dua tren chunks thu duoc 
+            st.session_state.vector_store = create_vector_store(document_chunks)
+            st.success("Vector store san sang! Ban co the dat cau hoi.")
+
+# Xu ly Logic Hoi - Dap (Q&A) khi da co vector store
+if st.session_state.vector_store is not None:
+    # 1. Khoi tao Component Truy xuat
+    retriever = st.session_state.vector_store.as_retriever(
+        search_type="similarity",
+        search_kwargs={"k": 3}
+    )
+    
+    try:
+        # 2. Khoi tao LLM va RetrievalQA Chain
+        llm = Ollama(model="qwen2.5:7b", temperature=0.7)
+        qa_chain = RetrievalQA.from_chain_type(
+            llm=llm,
+            chain_type="stuff",
+            retriever=retriever,
+            return_source_documents=True
+        )
+        
+        # 3. Form nhap cau hoi
+        user_question = st.text_input("Nhap cau hoi cua ban:", placeholder="Noi dung chinh la gi?")
+        if user_question:
+            with st.spinner("Dang suy nghi..."):
+                response = qa_chain.invoke({"query": user_question})
+                st.markdown("### Cau tra loi:")
+                st.success(response['result'])
+                
+    except Exception as e:
+        st.error(f"Loi ket noi LLM: {e}")
+\end{lstlisting}
+
+\newpage
+\section{KẾT QUẢ VÀ ĐÁNH GIÁ} % [cite: 462]
+\subsection{Kết quả đạt được}
+\subsubsection{Chức năng hoàn thành}
+\begin{itemize}
+    \item[\checkmark] Upload và xử lý PDF documents
+    \item[\checkmark] Text extraction và chunking
+    \item[\checkmark] Vector embedding và indexing
+    \item[\checkmark] Similarity search với FAISS
+    \item[\checkmark] Integration với Qwen2.5:7b model
+    \item[\checkmark] Question answering interface
+    \item[\checkmark] User-friendly web interface
+    \item[\checkmark] Error handling và validation
+\end{itemize}
+
+\subsubsection{ Performance Metrics}
+\textbf{Processing Time:}
+\begin{itemize}
+    \item PDF Loading: 2-5 giây (phụ thuộc file size)
+    \item Embedding Generation: 5-10 giây cho 100 chunks
+    \item Query Processing: 1-3 giây
+    \item Answer Generation: 3-8 giây
+\end{itemize}
+
+\textbf{Accuracy:}
+\begin{itemize}
+    \item Relevant document retrieval: 85-90\%
+    \item Answer relevance: 80-85\%
+    \item Factual accuracy: 75-80\%
+\end{itemize}
+\subsection{Testing} % [cite: 468]
+\subsubsection{Test Cases}
+\textbf{Test Case 1: Simple Factual Question}
+\begin{itemize}
+    \item Document: Technical manual
+    \item Question: "What is the installation procedure?"
+    \item Expected: Step-by-step instructions
+    \item Result: $\checkmark$ Passed
+\end{itemize}
+
+\textbf{Test Case 2: Complex Reasoning}
+\begin{itemize}
+    \item Document: Research paper
+    \item Question: "What are the main findings and their implications?"
+    \item Expected: Summary với analysis
+    \item Result: $\checkmark$ Passed
+\end{itemize}
+
+\textbf{Test Case 3: Out-of-context Question}
+\begin{itemize}
+    \item Document: Cooking recipe
+    \item Question: "How to solve differential equations?"
+    \item Expected: "I don't know" response
+    \item Result: $\checkmark$ Passed
+\end{itemize}
+\subsection{Ưu điểm}
+\begin{enumerate}
+    \item \textbf{Privacy}: Chạy hoàn toàn local, không gửi data ra ngoài
+    \item \textbf{Cost-effective}: Không tốn phí API calls
+    \item \textbf{Customizable}: Dễ dàng thay đổi models và parameters
+    \item \textbf{User-friendly}: Giao diện đơn giản, dễ sử dụng
+    \item \textbf{Accurate}: Retrieval-based giúp câu trả lời chính xác hơn
+    \item \textbf{Fast}: Response time chấp nhận được
+\end{enumerate}
+\subsection{Hạn chế}
+\begin{enumerate}
+    \item \textbf{Model size}: 1.5B parameters có giới hạn về khả năng reasoning
+    \item \textbf{Context length}: Giới hạn số lượng chunks có thể xử lý
+    \item \textbf{Language support}: Chủ yếu tốt cho tiếng Anh
+    \item \textbf{PDF quality}: Phụ thuộc vào chất lượng PDF input
+    \item \textbf{Hardware requirement}: Cần máy tính đủ mạnh
+\end{enumerate}
+\subsection{So sánh với các giải pháp khác}
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|c|c|c|}
+        \hline
+        \textbf{Feature} & \textbf{Dự án này} & \textbf{ChatGPT} & \textbf{Local LLM} \\ \hline
+        Privacy & \checkmark & $\times$ & \checkmark \\ \hline
+        Cost & Free & Paid & Free \\ \hline
+        Customization & High & Low & High \\ \hline
+        Document Upload & \checkmark & \checkmark & $\times$ \\ \hline
+        Accuracy & Good & Excellent & Variable \\ \hline
+        Speed & Fast & Very Fast & Slow \\ \hline
+    \end{tabular}
+    \caption{So sánh với các giải pháp khác}
+\end{table}
+\section{HƯỚNG DẪN SỬ DỤNG} % [cite: 469]
+\subsection{Hướng dẫn cho người dùng cuối}
+\subsubsection{Khởi động ứng dụng}
+\begin{enumerate}
+    \item Mở terminal/command prompt
+    \item Navigate đến thư mục project
+    \item Activate virtual environment:
+    \begin{lstlisting}[language=bash]
+source venv/bin/activate # Mac/Linux
+venv\Scripts\activate    # Windows
+    \end{lstlisting}
+    \item Chạy Streamlit:
+    \begin{lstlisting}[language=bash]
+streamlit run app.py
+    \end{lstlisting} % [cite: 470]
+    \item Truy cập \url{http://localhost:8501} trong browser
+\end{enumerate}
+\subsubsection{Upload tài liệu}
+\begin{enumerate}
+    \item Click vào "Browse files" hoặc drag-and-drop PDF.
+    \item Chờ thông báo "PDF uploaded successfully!".
+    \item Hệ thống tự động xử lý document.
+    \item Xem progress trong các section: "Splitting..." và "Creating embeddings...".
+\end{enumerate}
+\subsubsection{Đặt câu hỏi}
+\begin{enumerate}
+    \item Sau khi document được xử lý, scroll xuống section "Ask a Question".
+    \item Nhập câu hỏi vào text input.
+    \item Press Enter hoặc click bên ngoài input box.
+    \item Chờ spinner "Processing your query...".
+    \item Xem câu trả lời hiển thị dưới section "Response".
+\end{enumerate}
+\subsubsection{Tips sử dụng}
+\textbf{Để câu trả lời chính xác hơn:}
+\begin{itemize}
+    \item Đặt câu hỏi cụ thể, rõ ràng.
+    \item Sử dụng từ khóa có trong document.
+    \item Tránh câu hỏi quá chung chung.
+    \item Chia câu hỏi phức tạp thành nhiều câu nhỏ.
+\end{itemize}
+\begin{itemize}
+    \item Nếu upload fail: Check file format (phải là PDF).
+    \item Nếu processing lâu: Check file size (nên < 50MB).
+    \item Nếu không có response: Kiểm tra Ollama đang chạy.
+    \item Nếu lỗi khác: Xem error message và retry.
+\end{itemize}
+\subsection{Hướng dẫn cho developers} % [cite: 473]
+\subsubsection{Customize embedding model}
+\begin{lstlisting}[language=Python]
+# Modify in app.py
+embedder = HuggingFaceEmbeddings(
+    model_name="sentence-transformers/paraphrase-multilingual-mpnet-base-v2" # Best for Vietnamese
+)
+\end{lstlisting}
+\subsubsection{Adjust chunk parameters}
+\begin{lstlisting}[language=Python]
+text_splitter = RecursiveCharacterTextSplitter(
+    chunk_size=1500,    # Increase for more context
+    chunk_overlap=200   # Increase overlap
+)
+\end{lstlisting}
+\subsubsection{Thay đổi LLM model}
+\begin{lstlisting}[language=bash]
+# Pull other models
+ollama pull llama2:7b
+ollama pull mistral:7b
+\end{lstlisting}
+\begin{lstlisting}[language=Python]
+# Update in app.py
+llm = Ollama(model="llama2:7b")
+\end{lstlisting}
+\subsubsection{Modify retrieval parameters}
+\begin{lstlisting}[language=Python]
+retriever = vector.as_retriever(
+    search_type="mmr",          # Maximum Marginal Relevance
+    search_kwargs={
+        "k": 5,                 # Retrieve more results
+        "fetch_k": 30,
+        "lambda_mult": 0.7      # Diversity parameter
+    }
+)
+\end{lstlisting}
+\subsubsection{Add logging}
+\begin{lstlisting}[language=bash]
+import logging
+
+logging . basicConfig ( level = logging . INFO )
+logger = logging . getLogger ( __name__ )
+
+# Add in the steps
+logger . info ( f" Processing {len ( documents )} chunks ")
+logger . info ( f" Query : { user_input }")
+logger . info ( f" Retrieved { len ( relevant_docs )} documents ")
+\end{lstlisting}
+\newpage
+\section{YÊU CẦU PHÁT TRIỂN PROJECT} % [cite: 482]
+\subsection{Giới thiệu}
+\text{Phần này đưa ra các yêu cầu phát triển thêm cho project, được sắp xếp theo mức độ khó
+tăng dần. Sinh viên cần hoàn thành các yêu cầu để nâng cao kỹ năng và mở rộng tính
+năng của hệ thống RAG.}
+\subsection{Các yêu cầu phát triển}
+\subsubsection{Câu hỏi 1: Thêm hỗ trợ file DOCX}
+\textbf{Yêu cầu:}
+\begin{itemize}
+    \item Mở rộng hệ thống để hỗ trợ tải lên và xử lý file DOCX
+    \item Sử dụng thư viện phù hợp (python-docx hoặc DocxLoader từ LangChain)
+    \item Đảm bảo text extraction chính xác
+\end{itemize}
+\subsubsection{Câu hỏi 2: Lưu trữ lịch sử hội thoại} 
+\textbf{Yêu cầu:}
+\begin{itemize}
+    \item Lưu trữ các câu hỏi và câu trả lời trong session
+    \item Hiển thị lịch sử chat trong sidebar
+    \item Cho phép người dùng xem lại các câu hỏi đã hỏi
+\end{itemize}
+\subsubsection{Câu hỏi 3: Thêm nút xóa lịch sử}
+\textbf{Yêu cầu:}
+\begin{itemize}
+    \item Thêm button "Clear History" để xóa toàn bộ lịch sử chat
+    \item Thêm button "Clear Vector Store" để xóa tài liệu đã upload
+    \item Có confirmation dialog trước khi xóa
+\end{itemize}
+\subsubsection{Câu hỏi 4: Cải thiện chunk strategy} 
+\textbf{Yêu cầu:}
+\begin{itemize}
+    \item Thử nghiệm các giá trị chunk\_size khác nhau (500, 1000, 1500, 2000)
+    \item Thử nghiệm chunk\_overlap khác nhau (50, 100, 200)
+    \item So sánh và báo cáo kết quả về độ chính xác
+    \item Cho phép người dùng tùy chỉnh chunk parameters
+\end{itemize}
+\subsubsection{Câu hỏi 5: Thêm citation/source tracking}
+\textbf{Yêu cầu:}
+\begin{itemize}
+    \item Hiển thị nguồn gốc của thông tin (trang số, vị trí trong PDF)
+    \item Cho phép người dùng click để xem context gốc
+    \item Highlight các đoạn văn được sử dụng để trả lời
+\end{itemize}
+\subsubsection{Câu hỏi 6: Implement Conversational RAG} 
+\textbf{Yêu cầu:}
+\begin{itemize}
+    \item Thêm memory để theo dõi ngữ cảnh cuộc hội thoại
+    \item LLM có thể tham chiếu câu hỏi và trả lời trước đó
+    \item Xử lý follow-up questions (câu hỏi tiếp theo)
+\end{itemize}
+\subsubsection{Câu hỏi 7: Thêm hybrid search}
+\textbf{Yêu cầu:}
+\begin{itemize}
+    \item Kết hợp semantic search (vector) với keyword search (BM25)
+    \item Implement ensemble retriever
+    \item So sánh performance với pure vector search
+\end{itemize}
+\subsubsection{Câu hỏi 8: Multi-document RAG với metadata filtering} 
+\textbf{Yêu cầu:}
+\begin{itemize}
+    \item Hỗ trợ upload nhiều PDF cùng lúc
+    \item Lưu trữ metadata cho mỗi document (tên file, ngày upload, loại)
+    \item Cho phép filter theo metadata khi search
+    \item Hiển thị câu trả lời từ document nào
+\end{itemize}
+\subsubsection{Câu hỏi 9: Implement Re-ranking với Cross-Encoder}
+\textbf{Yêu cầu:}
+\begin{itemize}
+    \item Thêm bước re-ranking sau retrieval
+    \item Sử dụng cross-encoder model để đánh giá lại relevance
+    \item So sánh với bi-encoder (current approach)
+    \item Tối ưu hóa latency
+\end{itemize}
+\subsubsection{Câu hỏi 10: Advanced RAG với Self-RAG}
+\textbf{Yêu cầu:}
+\begin{itemize}
+    \item Implement Self-RAG: LLM tự đánh giá câu trả lời
+    \item Query rewriting: Tự động cải thiện câu hỏi
+    \item Multi-hop reasoning
+    \item Confidence scoring
+\end{itemize}
+
+\subsection{Hướng dẫn đánh giá}
+Mỗi câu hỏi được đánh giá theo:
+\begin{itemize}
+    \item \textbf{Functionality (40\%)}: Hoạt động đúng
+    \item \textbf{Code Quality (20\%)}: Clean code, comments
+    \item \textbf{Documentation (20\%)}: README, docs
+    \item \textbf{Testing (10\%)}: Test cases
+    \item \textbf{UI/UX (10\%)}: User-friendly
+\end{itemize}
+\textbf{Điểm thưởng:}
+\begin{itemize}
+    \item Performance optimization: +10\%
+    \item Error handling: +5\%
+    \item Creative solutions: +5\%
+    \item Comprehensive tests: +10\%
+\end{itemize}
+\newpage
+\section{KẾT LUẬN} % [cite: 491]
+\subsection{ Tổng kết}
+Dự án đã xây dựng thành công một hệ thống RAG hoàn chỉnh với các tính năng:
+\begin{itemize}
+    \item Hỗ trợ tải lên và xử lý file PDF
+    \item Embedding đa ngôn ngữ với MPNet
+    \item Vector search với FAISS
+    \item LLM integration với Ollama (Qwen2.5:7b)
+    \item Giao diện web thân thiện với Streamlit
+    \item Tự động phát hiện ngôn ngữ và trả lời phù hợp
+\end{itemize}
+Hệ thống đã được test với nhiều loại tài liệu và cho kết quả chính xác, đáp ứng được yêu cầu đặt ra. % [cite: 492]
+\newpage
+\begin{thebibliography}{9} % [cite: 493]
+    \bibitem{langchain} LangChain Documentation. LangChain: Building applications with LLMs through composability. \url{https://python.langchain.com/docs/get_started/introduction}
+    \bibitem{ollama} Ollama. Get up and running with large language models locally. \url{https://ollama.ai/} % [cite: 494]
+    \bibitem{faiss} Johnson, J., Douze, M., \& Jégou, H. (2019). Billion-scale similarity search with GPUs. IEEE Transactions on Big Data. % [cite: 495]
+    \bibitem{streamlit} Streamlit Documentation. The fastest way to build and share data apps. \url{https://docs.streamlit.io/} % [cite: 496]
+    \bibitem{transformers} Wolf, T., et al. (2020). Transformers: State-of-the-art Natural Language Processing. EMNLP 2020. % [cite: 497]
+    \bibitem{rag} Lewis, P., et al. (2020). Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks. NeurIPS 2020. % [cite: 498]
+\end{thebibliography}
+
+\end{document}

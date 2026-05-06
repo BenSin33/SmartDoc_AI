@@ -20,9 +20,9 @@ Package Manager: pip.
 # 🔧 Installation and Usage
 1. Environment SetupBash# Clone the repository  
 
-git clone [repository-url]  
+git clone [https://github.com/BenSin33/SmartDoc_AI.git]  
 
-cd Project-LLMs-Rag-Agent  
+cd SmartDoc_AI
 
 --Create and activate a virtual environment  
 
@@ -41,10 +41,13 @@ source venv/bin/activate
 pip install -r requirements.txt  
 
 2. Model Installation  
-   (Ollama)Download and install Ollama from ollama.ai, then pull the required model:  
-   ollama pull qwen2.5:7b  
-3. Running the Application:  
-   streamlit run app.py  
+(Ollama)Download and install Ollama from ollama.ai, then pull the required model:
+   
+ollama pull qwen2.5:7b
+   
+4. Running the Application:
+
+streamlit run app.py  
 Once started, access the interface at http://localhost:8501 in your web browser.  
 
 # 📂 Project Structure
