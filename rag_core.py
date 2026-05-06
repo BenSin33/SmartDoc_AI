@@ -1,11 +1,19 @@
 import streamlit as st
 from langchain.retrievers.document_compressors import CrossEncoderReranker
 from langchain_community.cross_encoders import HuggingFaceCrossEncoder
+import logging
+
+logger = logging.getLogger(__name__)
 
 @st.cache_resource
 def get_cross_encoder_compressor():
-    cross_model = HuggingFaceCrossEncoder(model_name="cross-encoder/ms-marco-MiniLM-L-6-v2")
-    return CrossEncoderReranker(model=cross_model, top_n=3)
+    """Tải và cache mô hình Re-ranking để tránh tải lại mỗi lần rerun"""
+    try:
+        cross_model = HuggingFaceCrossEncoder(model_name="cross-encoder/ms-marco-MiniLM-L-6-v2")
+        return CrossEncoderReranker(model=cross_model, top_n=3)
+    except Exception as e:
+        logger.error(f"Lỗi khi tải CrossEncoder: {e}")
+        return None
 
 def is_follow_up_question(question: str) -> bool:
     lowered_question = question.lower().strip()
@@ -31,7 +39,7 @@ def rewrite_follow_up_question(llm, question: str, chat_history):
 
     recent_context = build_recent_chat_context(chat_history)
     rewrite_prompt = f"""
-    Bạn có nhiệm vụ biến một câu hỏi follow-up thành câu hỏi độc lập, rõ nghĩa hơn để hệ thống truy xuất tài liệu chính xác hơn.
+    Bạn có nhiệm vụ biến một câu hỏi follow-up thành câu hỏi độc lập, rõ nghĩa hơn.
 
     Lịch sử hội thoại gần nhất:
     {recent_context}
@@ -40,10 +48,8 @@ def rewrite_follow_up_question(llm, question: str, chat_history):
     {question}
 
     Yêu cầu:
-    - Nếu câu hỏi hiện tại có từ tham chiếu như "phần đó", "mục đó", "ý trên", hãy thay bằng đối tượng cụ thể được nhắc gần nhất.
-    - Giữ nguyên ý định gốc của người dùng.
-    - Chỉ trả về câu hỏi đã viết lại.
-    - Nếu lịch sử không đủ rõ để suy ra đối tượng, trả lại nguyên câu hỏi.
+    - Thay các từ tham chiếu (phần đó, ý trên...) bằng đối tượng cụ thể.
+    - Chỉ trả về duy nhất câu hỏi đã viết lại.
     """
     try:
         rewritten_question = llm.invoke(rewrite_prompt).strip()
@@ -65,15 +71,13 @@ class CoRAGRetriever:
         
         for attempt in range(max_retries):
             self.retrieval_count += 1
-            docs = self.base_retriever.get_relevant_documents(current_question)
+            docs = self.base_retriever.invoke(current_question) # Dùng invoke thay cho get_relevant_documents
             
             validation_prompt = f"""
-            Đánh giá xem các documents sau có liên quan đến câu hỏi không?
+            Đánh giá xem các đoạn văn bản sau có trả lời được câu hỏi không?
             Câu hỏi: {current_question}
-            
-            Documents: {' '.join([d.page_content[:200] for d in docs[:3]])}
-            
-            Trả lời chỉ với: RELEVANT hoặc NOT_RELEVANT
+            Nội dung: {' '.join([d.page_content[:200] for d in docs[:3]])}
+            Trả lời duy nhất: RELEVANT hoặc NOT_RELEVANT
             """
             
             validation_result = self.llm.invoke(validation_prompt).strip().upper()
@@ -83,12 +87,8 @@ class CoRAGRetriever:
             if "RELEVANT" in validation_result or attempt == max_retries - 1:
                 return docs
             
-            rewrite_prompt = f"""
-            Viết lại câu hỏi này một cách khác để tìm kiếm tài liệu tốt hơn.
-            CHỈ TRẢ VỀ CÂU HỎI, không thêm lời giải thích.
-            
-            Câu hỏi gốc: {current_question}
-            """
+            # Rewrite để tìm kiếm lại nếu không liên quan
+            rewrite_prompt = f"Viết lại câu hỏi sau để tìm kiếm tài liệu tốt hơn: {current_question}"
             current_question = self.llm.invoke(rewrite_prompt).strip()
         
         return docs
