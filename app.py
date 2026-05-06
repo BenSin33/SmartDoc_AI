@@ -28,6 +28,7 @@ st.markdown(CSS_STYLE, unsafe_allow_html=True)
 
 # Các hàm phụ trợ UI
 def highlight_text(context, answer):
+    if not answer: return context
     words = answer.split()[:15]
     highlighted = context
     for w in words:
@@ -50,6 +51,7 @@ def clear_vector_store_dialog():
     if st.button("Xác nhận xóa", type="primary"):
         st.session_state.vector_store = None
         st.session_state.chunks = None
+        st.session_state.processed_files = [] # Reset danh sách file đã xử lý
         if "user_question" in st.session_state:
             st.session_state.user_question = ""
         if "pdf_bytes_dict" in st.session_state:
@@ -60,12 +62,10 @@ def clear_vector_store_dialog():
         st.rerun()
 
 # =========================== KHỞI TẠO STATE ===============================
-if "vector_store" not in st.session_state:
-    st.session_state.vector_store = None
-if "chunks" not in st.session_state:
-    st.session_state.chunks = None
-if "chat_history" not in st.session_state:
-    st.session_state.chat_history = []
+if "vector_store" not in st.session_state: st.session_state.vector_store = None
+if "chunks" not in st.session_state: st.session_state.chunks = None
+if "processed_files" not in st.session_state: st.session_state.processed_files = []
+if "chat_history" not in st.session_state: st.session_state.chat_history = []
 if "metrics" not in st.session_state:
     st.session_state.metrics = {"doc_processing_time": 0, "embedding_time": 0, "qa_time": 0}
 if "rag_corag_metrics" not in st.session_state:
@@ -73,10 +73,8 @@ if "rag_corag_metrics" not in st.session_state:
         "rag": {"qa_time": [], "retrieval_count": [], "relevance_scores": []},
         "corag": {"qa_time": [], "retrieval_count": [], "relevance_scores": []}
     }
-if "model_selection" not in st.session_state:
-    st.session_state.model_selection = "RAG"
-if "uploader_key_version" not in st.session_state:
-    st.session_state.uploader_key_version = 0
+if "model_selection" not in st.session_state: st.session_state.model_selection = "RAG"
+if "uploader_key_version" not in st.session_state: st.session_state.uploader_key_version = 0
 if "memory" not in st.session_state:
     st.session_state.memory = ConversationBufferMemory(
         memory_key="chat_history", return_messages=True, output_key="answer"
@@ -119,12 +117,9 @@ with st.sidebar:
     st.session_state.chunk_overlap = chunk_overlap
 
     st.markdown("### 📊 Performance Metrics")
-    if "metrics" in st.session_state:
-        st.metric("Doc Processing", f"{st.session_state.metrics.get('doc_processing_time', 0):.2f} s")
-        st.metric("Embedding", f"{st.session_state.metrics.get('embedding_time', 0):.2f} s")
-        st.metric("Q&A Time", f"{st.session_state.metrics.get('qa_time', 0):.2f} s")
-    else:
-        st.info("Chưa có dữ liệu metrics.")
+    st.metric("Doc Processing", f"{st.session_state.metrics.get('doc_processing_time', 0):.2f} s")
+    st.metric("Embedding", f"{st.session_state.metrics.get('embedding_time', 0):.2f} s")
+    st.metric("Q&A Time", f"{st.session_state.metrics.get('qa_time', 0):.2f} s")
 
     st.markdown("---")
     st.markdown("""<h2 style="font-size: 20px; font-weight: 600; color: #FFFFFF; margin-bottom: 16px;">📊 RAG vs CoRAG</h2>""", unsafe_allow_html=True)
@@ -145,7 +140,7 @@ with st.sidebar:
 
     st.markdown("---")
     st.markdown("""<h2 style="font-size: 20px; font-weight: 600; color: #FFFFFF; margin-bottom: 16px;">Lịch sử trò chuyện</h2>""", unsafe_allow_html=True)
-    if "chat_history" in st.session_state and st.session_state.chat_history:
+    if st.session_state.chat_history:
         for chat in reversed(st.session_state.chat_history):
             short_q = chat['question'][:25] + "..." if len(chat['question']) > 25 else chat['question']
             with st.expander(f"Q: {short_q}"):
@@ -172,8 +167,7 @@ with st.sidebar:
                     vector_engine.vector_store = st.session_state.vector_store
                     vector_engine.save_local_index()
                     st.success("Đã lưu index thành công!")
-            else:
-                st.warning("Chưa có vector store để lưu.")
+            else: st.warning("Chưa có vector store để lưu.")
     with col4:
         if st.button("Load Index", use_container_width=True):
             with st.spinner("Đang tải index..."):
@@ -182,8 +176,7 @@ with st.sidebar:
                 if retriever:
                     st.session_state.vector_store = vector_engine.vector_store
                     st.success("Đã tải index thành công!")
-                else:
-                    st.error("Không tìm thấy index đã lưu.")
+                else: st.error("Không tìm thấy index đã lưu.")
 
 # =========================== MAIN AREA ===============================
 st.markdown('<h1 style="color: #212529;">SmartDoc AI - Intelligent Document Q&A System</h1>', unsafe_allow_html=True)
@@ -192,55 +185,39 @@ st.markdown('<h3 style="color: #212529;">Hỏi đáp thông minh với tài li�
 st.markdown('<p class="custom-upload-label">📂 Tải lên tài liệu của bạn (PDF, DOCX)</p>', unsafe_allow_html=True)
 danh_sach_tai_len = st.file_uploader("", type=["pdf", "docx"], accept_multiple_files=True, key=f"uploaded_documents_{st.session_state.uploader_key_version}")
 
-if "pdf_bytes_dict" not in st.session_state:
-    st.session_state.pdf_bytes_dict = {}
+if "pdf_bytes_dict" not in st.session_state: st.session_state.pdf_bytes_dict = {}
 
+# LOGIC XỬ LÝ FILE (TRÁNH LẶP LẠI)
 if danh_sach_tai_len:
-    for file in danh_sach_tai_len:
-        if file.name.endswith('.pdf'):
-            st.session_state.pdf_bytes_dict[file.name] = file.getvalue()
-
-    all_chunks = []
-    with st.spinner("⏳ Hệ thống đang xử lý tài liệu và khởi tạo dữ liệu..."):
-        try:
-            start_time_processing = time.time()
-            all_chunks = []
-            
-            # 1. Quá trình xử lý file (Loading & Chunking)
-            for file in danh_sach_tai_len:
-                chunks = process_document(file, st.session_state.chunk_size, st.session_state.chunk_overlap)
-                if chunks:
-                    all_chunks.extend(chunks)
-            
-            st.session_state.metrics["doc_processing_time"] = time.time() - start_time_processing
-
-            if all_chunks:
-                st.session_state.chunks = all_chunks
-                # Thông báo xử lý file xong
-                st.toast(f"✅ Đã xử lý {len(all_chunks)} chunks", icon="📄")
-
-                # 2. Quá trình tạo Embedding và Vector Store
-                start_time_embedding = time.time()
+    current_names = [f.name for f in danh_sach_tai_len]
+    if st.session_state.processed_files != current_names:
+        with st.spinner("⏳ Hệ thống đang xử lý tài liệu mới..."):
+            try:
+                start_proc = time.time()
+                all_chunks = []
+                for file in danh_sach_tai_len:
+                    if file.name.endswith('.pdf'):
+                        st.session_state.pdf_bytes_dict[file.name] = file.getvalue()
+                    chunks = process_document(file, st.session_state.chunk_size, st.session_state.chunk_overlap)
+                    if chunks: all_chunks.extend(chunks)
                 
-                # Gọi hàm tạo vector store
-                st.session_state.vector_store = create_vector_store(all_chunks)
-                
-                st.session_state.metrics["embedding_time"] = time.time() - start_time_embedding
-                
-                # Hiển thị thông báo thành công cuối cùng
-                st.markdown(f"""
-                    <div style="color: #155724; background-color: #d4edda; padding: 12px; border-radius: 8px; border-left: 5px solid #28a745; margin: 10px 0;">
-                        <b>Thành công!</b> Vector store đã sẵn sàng cho truy vấn.
-                    </div>
-                """, unsafe_allow_html=True)
-            else:
-                st.error("❌ Không thể trích xuất nội dung từ các file đã chọn. Vui lòng kiểm tra lại định dạng file.")
+                st.session_state.metrics["doc_processing_time"] = time.time() - start_proc
 
-        except Exception as e:
-            # Spinner sẽ tự động dừng khi nhảy vào khối except này
-            st.error(f"❌ Đã xảy ra lỗi trong quá trình xử lý: {str(e)}")
-            # Log lỗi chi tiết nếu cần thiết để debug
-            print(f"Error Detail: {e}")
+                if all_chunks:
+                    st.session_state.chunks = all_chunks
+                    st.toast(f"✅ Đã xử lý {len(all_chunks)} chunks", icon="📄")
+                    
+                    start_embed = time.time()
+                    st.session_state.vector_store = create_vector_store(all_chunks)
+                    st.session_state.metrics["embedding_time"] = time.time() - start_embed
+                    
+                    st.session_state.processed_files = current_names # Lưu trạng thái đã xử lý
+                    st.success("✅ Thành công! Vector store đã sẵn sàng.")
+                else:
+                    st.error("❌ Không thể trích xuất nội dung.")
+            except Exception as e:
+                st.error(f"❌ Lỗi xử lý: {str(e)}")
+
 # =========================== PHẦN ĐẶT CÂU HỎI ===============================
 if st.session_state.vector_store is not None:
     st.markdown("---")
@@ -255,16 +232,16 @@ if st.session_state.vector_store is not None:
 
     st.markdown("<b style='color: #212529;'>Tính năng nâng cao:</b>", unsafe_allow_html=True)
     col_adv1, col_adv2 = st.columns(2)
-    with col_adv1:
-        use_reranker = st.checkbox("Bật Re-ranking (MMR)")
-    with col_adv2:
-        use_self_rag = st.checkbox("Bật Self-RAG")
+    with col_adv1: use_reranker = st.checkbox("Bật Re-ranking (Cross-Encoder)")
+    with col_adv2: use_self_rag = st.checkbox("Bật Self-RAG")
     
-    faiss_kwargs={"k": 5, "fetch_k": 20, "lambda_mult": 0.7}
+    faiss_kwargs={"k": 5}
     if file_can_loc != "Toàn bộ tài liệu":
         faiss_kwargs["filter"] = {"source_file": file_can_loc}
 
-    faiss_retriever = st.session_state.vector_store.as_retriever(search_type="mmr", search_kwargs=faiss_kwargs)
+    faiss_retriever = st.session_state.vector_store.as_retriever(search_kwargs=faiss_kwargs)
+    
+    # Khởi tạo BM25 cho Hybrid
     bm25_retriever = BM25Retriever.from_documents(st.session_state.chunks)
     bm25_retriever.k = 5
     hybrid_retriever = EnsembleRetriever(retrievers=[bm25_retriever, faiss_retriever], weights=[0.3, 0.7])
@@ -272,34 +249,17 @@ if st.session_state.vector_store is not None:
     active_retriever = hybrid_retriever if search_mode == "Hybrid (Vector + từ khoá)" else faiss_retriever
 
     if use_reranker:
-        with st.spinner("Đang tải mô hình Cross-Encoder..."):
-            compressor = get_cross_encoder_compressor()
+        compressor = get_cross_encoder_compressor()
+        if compressor:
             active_retriever = ContextualCompressionRetriever(base_compressor=compressor, base_retriever=active_retriever)
     
-    corag_retriever = None
-    if st.session_state.model_selection == "CoRAG (Corrective RAG)":
-        llm_temp = Ollama(model="qwen2.5:7b", temperature=0.2)
-        corag_retriever = CoRAGRetriever(active_retriever, llm_temp)
-            
     try:
-        llm = Ollama(model="qwen2.5:7b", temperature=0.2)
-        prompt_template = """
-            [INSTRUCTION]
-            Bạn là hệ thống RAG thông minh. Nhiệm vụ của bạn là trả lời câu hỏi CHỈ dựa trên Context được cung cấp.
-
-            [CONSTRAINT]
-            1. CHỈ sử dụng thông tin trong Context. Không bổ sung kiến thức bên ngoài.
-            2. Trả lời bằng Tiếng Việt 100%, diễn giải rõ ràng.
-            3. [QUAN TRỌNG]: Ở cuối câu trả lời, bạn BẮT BUỘC phải tự đánh giá độ tự tin (Confidence Score) về câu trả lời của mình.
-
-            [CONTEXT]
-            {context}
-
-            [QUESTION]
-            {question}
-
-            [ANSWER]
-            """
+        llm = Ollama(model="qwen2.5:7b", temperature=0.1)
+        prompt_template = """Chỉ sử dụng Context sau để trả lời. Trả lời bằng Tiếng Việt 100%.
+        Context: {context}
+        Câu hỏi: {question}
+        [ANSWER]:"""
+        
         QA_PROMPT = PromptTemplate(template=prompt_template, input_variables=["context", "question"])
         qa_chain = ConversationalRetrievalChain.from_llm(
             llm=llm, retriever=active_retriever, memory=st.session_state.memory,
@@ -307,50 +267,45 @@ if st.session_state.vector_store is not None:
         )
         
         with st.form("qa_form"):
-            user_question = st.text_input("Nhập câu hỏi của bạn:", key="user_question")
+            user_question = st.text_input("Nhập câu hỏi của bạn:", key="user_question_input")
             submitted = st.form_submit_button("Hỏi")    
         
         if submitted and user_question:
+            # 1. Xử lý câu hỏi follow-up
             final_question = rewrite_follow_up_question(llm, user_question, st.session_state.chat_history)
             if final_question != user_question:
                 st.info(f"**Câu hỏi follow-up đã được làm rõ:** {final_question}")
 
             if use_self_rag:
-                with st.spinner("Self-RAG đang phân tích..."):
-                    rewrite_prompt = f"""Viết lại câu hỏi sau: "{user_question}" """
-                    final_question = llm.invoke(rewrite_prompt)
-                    st.info(f"**Câu hỏi đã được tối ưu:** {final_question}")
+                with st.spinner("Self-RAG đang tối ưu..."):
+                    final_question = llm.invoke(f"Viết lại câu hỏi này để tìm kiếm tài liệu tốt hơn: {final_question}")
 
             with st.spinner("Đang suy nghĩ..."):
                 start_time_qa = time.time()
-                if st.session_state.model_selection == "CoRAG (Corrective RAG)" and corag_retriever:
-                    docs = corag_retriever.retrieve_and_validate(final_question)
+                
+                if st.session_state.model_selection == "CoRAG (Corrective RAG)":
+                    corag = CoRAGRetriever(active_retriever, llm)
+                    docs = corag.retrieve_and_validate(final_question)
                     response = qa_chain.invoke({"question": final_question})
-                    answer = response['answer']
                     
-                    qa_time = time.time() - start_time_qa
-                    st.session_state.rag_corag_metrics["corag"]["qa_time"].append(qa_time)
-                    st.session_state.rag_corag_metrics["corag"]["retrieval_count"].append(corag_retriever.retrieval_count)
-                    avg_relevance = sum(corag_retriever.relevance_scores) / len(corag_retriever.relevance_scores) if corag_retriever.relevance_scores else 0
-                    st.session_state.rag_corag_metrics["corag"]["relevance_scores"].append(avg_relevance)
+                    # Update metrics
+                    st.session_state.rag_corag_metrics["corag"]["qa_time"].append(time.time() - start_time_qa)
+                    st.session_state.rag_corag_metrics["corag"]["relevance_scores"].append(sum(corag.relevance_scores)/len(corag.relevance_scores) if corag.relevance_scores else 0)
                 else:
                     response = qa_chain.invoke({"question": final_question})
-                    answer = response['answer']
-                    
-                    qa_time = time.time() - start_time_qa
-                    st.session_state.rag_corag_metrics["rag"]["qa_time"].append(qa_time)
-                    st.session_state.rag_corag_metrics["rag"]["retrieval_count"].append(1)
+                    st.session_state.rag_corag_metrics["rag"]["qa_time"].append(time.time() - start_time_qa)
                     st.session_state.rag_corag_metrics["rag"]["relevance_scores"].append(1.0)
 
+                answer = response['answer']
                 st.session_state.metrics["qa_time"] = time.time() - start_time_qa
+                
                 st.markdown('<h3 style="color: #212529;">Câu trả lời:</h3>', unsafe_allow_html=True)
                 st.markdown(f"""<div style="color: #212529; background-color: #d4edda; padding: 16px; border-radius: 8px; border-left: 5px solid #28a745;">{answer}</div>""", unsafe_allow_html=True)
 
                 with st.expander("📚 Nguồn tham khảo"):
                     for i, doc in enumerate(response['source_documents']):
-                        page = doc.metadata.get("page", "Không rõ")
-                        source_file = doc.metadata.get("source_file", "Không rõ")
-                        uploaded_date = doc.metadata.get("uploaded_date", "Không rõ")
+                        page = doc.metadata.get("page", "N/A")
+                        source_file = doc.metadata.get("source_file", "N/A")
                         highlighted = highlight_text(doc.page_content, answer)
                         st.markdown(f"""<div style="padding: 12px; background-color: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; margin-bottom: 12px;"><b>📄 File: {source_file} | Trang: {page}</b><br><br>{highlighted[:500]}...</div>""", unsafe_allow_html=True)
                         if st.button(f"Xem chi tiết Chunk {i+1}", key=f"view_{i}_{source_file}"):
@@ -358,11 +313,11 @@ if st.session_state.vector_store is not None:
 
                 if "selected_chunk" in st.session_state:
                     st.markdown('<h3 style="color:#212529;">📖 Nội dung đầy đủ</h3>', unsafe_allow_html=True)
-                    st.markdown(f"""<div>{st.session_state["selected_chunk"]}</div>""", unsafe_allow_html=True)
+                    st.info(st.session_state["selected_chunk"])
 
                 st.session_state.chat_history.append({"question": user_question, "answer": answer})
                 
     except Exception as e:
-        st.markdown(f"""<div style="color: #212529; background-color: #f8d7da; padding: 12px; border-left: 4px solid #dc3545;">❌ Lỗi kết nối LLM: {e}</div>""", unsafe_allow_html=True)
+        st.error(f"❌ Lỗi kết nối: {e}")
 else:
     st.markdown("""<div style="background-color: #e3f2fd; padding: 12px; border-radius: 8px; border-left: 4px solid #007BFF; color: #212529;">Vui lòng tải lên tài liệu trước khi đặt câu hỏi.</div>""", unsafe_allow_html=True)
