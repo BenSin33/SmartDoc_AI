@@ -9,13 +9,18 @@ from langchain_community.document_loaders import (
 )
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
+# Embedding + Vector Store
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_community.vectorstores import FAISS
 
+
+# 1. PROCESS DOCUMENT → RETURN CHUNKS
 def process_document(uploaded_file, chunk_size=800, chunk_overlap=60):
     """
     Xử lý tài liệu:
     - Hỗ trợ PDF / DOCX
-    - Chunking linh hoạt theo UI
-    - Có cải tiến semantic nhẹ
+    - Chunking
+    - KHÔNG embed ở đây
     """
 
     file_extension = uploaded_file.name.split('.')[-1].lower()
@@ -25,9 +30,7 @@ def process_document(uploaded_file, chunk_size=800, chunk_overlap=60):
         tmp_file_path = tmp_file.name
 
     try:
-        # =========================
-        # 🔹 LOAD DOCUMENT
-        # =========================
+        # LOAD DOCUMENT
         if file_extension == "pdf":
             loader = PDFPlumberLoader(tmp_file_path)
         elif file_extension == "docx":
@@ -42,15 +45,11 @@ def process_document(uploaded_file, chunk_size=800, chunk_overlap=60):
             st.warning("Không có nội dung trong file")
             return None
 
-        # =========================
-        # 🔹 METADATA
-        # =========================
+        # METADATA
         uploaded_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         file_name = uploaded_file.name
 
-        # =========================
-        # 🔹 CHUNKING (IMPROVED)
-        # =========================
+        # CHUNKING
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=chunk_size,
             chunk_overlap=chunk_overlap,
@@ -64,7 +63,8 @@ def process_document(uploaded_file, chunk_size=800, chunk_overlap=60):
         )
 
         chunks = text_splitter.split_documents(docs)
-        # 🔹 CLEAN + METADATA
+
+        # CLEAN + METADATA
         for chunk in chunks:
             chunk.page_content = chunk.page_content.strip()
 
@@ -84,3 +84,28 @@ def process_document(uploaded_file, chunk_size=800, chunk_overlap=60):
     finally:
         if os.path.exists(tmp_file_path):
             os.remove(tmp_file_path)
+
+
+# CREATE VECTOR STORE (EMBED 1 LẦN DUY NHẤT)
+def create_vector_store(chunks):
+    """
+    Tạo embedding + FAISS từ chunks
+    """
+
+    if not chunks:
+        return None
+
+    try:
+        with st.spinner("Đang tạo embedding..."):
+            embeddings = HuggingFaceEmbeddings(
+                model_name="sentence-transformers/all-MiniLM-L6-v2"
+            )
+
+        with st.spinner("Đang tạo vector database (FAISS)..."):
+            vectorstore = FAISS.from_documents(chunks, embeddings)
+
+        return vectorstore
+
+    except Exception as e:
+        st.error(f"Lỗi tạo vector store: {str(e)}")
+        return None
